@@ -3,9 +3,9 @@
     "path": "~/Desktop/ZCURVE2.0/zcurve.R",
     "project_path": "zcurve.R",
     "type": "r_source",
-    "hash": "0",
+    "hash": "1112914199",
     "contents": "",
-    "dirty": true,
+    "dirty": false,
     "created": 1746825632092.0,
     "source_on_save": false,
     "relative_order": 1,
@@ -13,15 +13,15 @@
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "35,0",
-        "scrollLine": "12"
+        "cursorPosition": "33,8",
+        "scrollLine": "14"
     },
     "folds": "",
-    "lastKnownWriteTime": 1747030951,
+    "lastKnownWriteTime": 1747099228,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1747099125037,
+    "last_content_update": 1747099228321,
     "read_only": false,
     "read_only_alternatives": []
 }
