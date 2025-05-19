@@ -1,6 +1,7 @@
 library(zcurve)
 library(faux)
 library(truncnorm)
+library(tidyverse)
 set.seed(666)
 
 #example use of zcurve
@@ -37,7 +38,7 @@ fit <- zcurve(z_scores)
 
 sims_plot <- plot(fit,CI=TRUE,annotation=TRUE,main="Simulations")
 
-#Two DVs for each observation
+#Situation A: Two DVs for each observation
 zscores_A <- numeric(15000)
 A <- 1
 
@@ -87,7 +88,7 @@ prop05_A <- (length(pvalues05_A)/15000)*100
 pvalues01_A <- pvalues_scenarioA[pvalues_scenarioA < 0.01]
 prop01_A <- (length(pvalues01_A)/15000)*100
 
-#Optional Stopping
+#Situation B: Optional Stopping
 zscores_B <- numeric(15000)
 B <- 1 
 
@@ -136,3 +137,66 @@ prop05_B <- (length(pvalues05_B)/15000)*100
 
 pvalues01_B <- pvalues_scenarioB[pvalues_scenarioB < 0.01]
 prop01_B <- (length(pvalues01_B)/15000)*100
+
+#Situation C:
+zscores_C <- numeric(15000)
+C <- 1 
+
+pvalues_scenarioC <- numeric(15000)
+
+for (i in 1:15000) {
+  groups <- sample(
+    rep(c("control", "experimental"),
+        each = 20))
+  dv <- rnorm(n=40,mean=0,sd=1)
+  gender <- rbinom(n=40,size=1,p=0.5)
+  gender <- as.factor(
+    ifelse(gender == 1, "female", "male"))
+  data_C <- data.frame(dv, gender, groups)
+  ttest_result <- t.test(dv~groups, data=data_C,
+                         var.equal=TRUE)
+  ttest_pvalue <- ttest_result$p.value
+  main_model <- lm(dv~groups+gender,data=data_C)
+  main_pvalue <- summary(
+    main_model)$coefficients["groupsexperimental","Pr(>|t|)"]
+  int_model <- lm(dv~groups*gender,data=data_C)
+  int_pvalue <- summary(
+    int_model)$coefficients["groupsexperimental:gendermale","Pr(>|t|)"]
+  pvalues_C <- c(ttest=ttest_pvalue,
+                 main=main_pvalue,
+                 int=int_pvalue)
+  if (pvalues_C["int"] <= 0.05) {
+    pvalues_scenarioC[i] <- pvalues_C["int"]
+    zvalue_C <- abs(qnorm(pvalues_C["int"]/2,lower.tail=FALSE))
+    zscores_C[C] <- zvalue_C
+    C <- C+1
+  } else {
+    if (min(pvalues_C) <= 0.05) {
+      pvalues_scenarioC[i] <- min(pvalues_C)
+      zvalue_C <- abs(qnorm(min(pvalues_C)/2,lower.tail=FALSE))
+      zscores_C[C] <- zvalue_C
+      C <- C+1
+    } else {
+      pvalues_scenarioC[i] <- min(pvalues_C)
+    }
+  }
+  
+}
+
+zscores_C <- zscores_C[1:(C - 1)]
+
+fit_C <- zcurve(zscores_C)
+
+C_plot <- plot(fit_C,CI=TRUE,annotation=TRUE,main="Scenario C")
+
+#Note that the proportion of p-values align with simmons et al., 2011
+pvalues1_C <- pvalues_scenarioC[pvalues_scenarioC < 0.1]
+prop1_C <- (length(pvalues1_C)/15000)*100
+
+pvalues05_C <- pvalues_scenarioC[pvalues_scenarioC < 0.05]
+prop05_C <- (length(pvalues05_C)/15000)*100
+
+pvalues01_C <- pvalues_scenarioC[pvalues_scenarioC < 0.01]
+prop01_C <- (length(pvalues01_C)/15000)*100
+
+proportions_C <- c(prop1_C, prop05_C, prop01_C)
