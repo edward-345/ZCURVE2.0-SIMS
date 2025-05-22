@@ -147,7 +147,7 @@ prop01_B <- (length(pvalues01_B)/15000)*100
 
 proportions_B <- c(prop1_B, prop05_B, prop01_B)
 
-#Situation C:
+#Situation C: Main effect or interaction term ANCOVAs
 zscores_C <- numeric(15000)
 C <- 1 
 
@@ -212,3 +212,71 @@ pvalues01_C <- pvalues_scenarioC[pvalues_scenarioC < 0.01]
 prop01_C <- (length(pvalues01_C)/15000)*100
 
 proportions_C <- c(prop1_C, prop05_C, prop01_C)
+
+#Situation D:
+
+zscores_D <- numeric(15000)
+D <- 1 
+
+pvalues_scenarioD <- numeric(15000)
+
+for (i in 1:15000) {
+  conditions <- sample(
+    rep(c("low", "medium", "high"), length.out = 40))
+  dv <- rnorm(n = 40, mean = 0, sd = 1)
+  data_D <- data.frame(conditions, dv)
+  
+  LowMed_pvalue <- t.test(
+    dv ~ conditions,
+    data = subset(data_D, conditions %in% c("low","medium")))$p.value
+  LowHigh_pvalue <-t.test(
+    dv ~ conditions,
+    data = subset(data_D, conditions %in% c("low","high")))$p.value
+  MedHigh_pvalue <- t.test(
+    dv ~ conditions,
+    data = subset(data_D, conditions %in% c("medium","high")))$p.value
+  
+  lm_coding <- ifelse(data_D$conditions == "low", -1,
+                      ifelse(data_D$conditions == "medium", 0, 1))
+  model_D <- lm(outcome~lm_coding)
+  model_pvalue <- coef(summary(model_D))["lm_coding", "Pr(>|t|)"]
+  
+  pvalues_D <- c(LowMed_pvalue, LowHigh_pvalue, MedHigh_pvalue,
+                 model_pvalue)
+  
+  if (min(pvalues_D) <= 0.05) {
+    pvalues_scenarioD[i] <- min(pvalues_D)
+    zvalue_D <- abs(qnorm(min(pvalues_D)/2, lower.tail = FALSE))
+    zscores_D[D] <- zvalue_D
+    D <- D + 1
+  } else {
+    pvalues_scenarioD[i] <- min(pvalues_D)
+  }
+  
+}
+
+zscores_D <- zscores_D[1:(D - 1)]
+
+fit_D <- zcurve(zscores_D)
+
+D_plot <- plot(fit_D, DI = TRUE, annotation = TRUE, main = "Scenario D")
+
+#Note that the proportion of p-values align with Simmons et al., 2011
+pvalues1_D <- pvalues_scenarioD[pvalues_scenarioD < 0.1]
+prop1_D <- (length(pvalues1_D)/15000)*100
+
+pvalues05_D <- pvalues_scenarioD[pvalues_scenarioD < 0.05]
+prop05_D <- (length(pvalues05_D)/15000)*100
+
+pvalues01_D <- pvalues_scenarioD[pvalues_scenarioD < 0.01]
+prop01_D <- (length(pvalues01_D)/15000)*100
+
+proportions_D <- c(prop1_D, prop05_D, prop01_D)
+
+
+
+
+
+
+
+
