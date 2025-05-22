@@ -170,8 +170,13 @@ for (i in 1:15000) {
     main_model)$coefficients["groupsexperimental", "Pr(>|t|)"]
   
   int_model <- lm(dv ~ groups*gender, data = data_C)
-  int_pvalue <- summary(
-    int_model)$coefficients["groupsexperimental:gendermale", "Pr(>|t|)"]
+  coefs <- coef(summary(int_model))
+  int_term_name <- grep("group.*:gender.*", rownames(coefs), value = TRUE)
+  if (length(int_term_name) == 1) {
+    int_pvalue <- coefs[int_term_name, "Pr(>|t|)"]
+  } else {
+    int_pvalue <- 1
+  }
   
   pvalues_C <- c(ttest=ttest_pvalue,
                  main=main_pvalue,
@@ -213,8 +218,7 @@ prop01_C <- (length(pvalues01_C)/15000)*100
 
 proportions_C <- c(prop1_C, prop05_C, prop01_C)
 
-#Situation D:
-
+#Situation D: Ordinal test condition
 zscores_D <- numeric(15000)
 D <- 1 
 
@@ -238,7 +242,7 @@ for (i in 1:15000) {
   
   lm_coding <- ifelse(data_D$conditions == "low", -1,
                       ifelse(data_D$conditions == "medium", 0, 1))
-  model_D <- lm(outcome~lm_coding)
+  model_D <- lm(dv~lm_coding)
   model_pvalue <- coef(summary(model_D))["lm_coding", "Pr(>|t|)"]
   
   pvalues_D <- c(LowMed_pvalue, LowHigh_pvalue, MedHigh_pvalue,
