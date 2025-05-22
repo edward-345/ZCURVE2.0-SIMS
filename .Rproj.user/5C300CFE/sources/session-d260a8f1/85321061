@@ -1,9 +1,9 @@
 {
     "id": "85321061",
-    "path": "~/Desktop/ZCURVE2.0/zcurve.R",
-    "project_path": "zcurve.R",
+    "path": "~/Desktop/ZCURVE2.0/pHacking.R",
+    "project_path": "pHacking.R",
     "type": "r_source",
-    "hash": "626899893",
+    "hash": "2334842811",
     "contents": "",
     "dirty": false,
     "created": 1746825632092.0,
@@ -13,16 +13,16 @@
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "220,0",
-        "scrollLine": "193",
+        "cursorPosition": "56,0",
+        "scrollLine": "29",
         "ignored_words": "al\n"
     },
     "folds": "",
-    "lastKnownWriteTime": 1747901219,
+    "lastKnownWriteTime": 1747904453,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1747901219443,
+    "last_content_update": 1747904453,
     "read_only": false,
     "read_only_alternatives": []
 }
