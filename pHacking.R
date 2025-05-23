@@ -278,7 +278,7 @@ zscores_D <- zscores_D[1:(D - 1)]
 
 fit_D <- zcurve(zscores_D)
 
-D_plot <- plot(fit_D, DI = TRUE, annotation = TRUE, main = "Scenario D")
+D_plot <- plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
 pvalues1_D <- pvalues_scenarioD[pvalues_scenarioD < 0.1]
