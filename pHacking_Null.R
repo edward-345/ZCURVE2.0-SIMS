@@ -61,7 +61,9 @@ for (i in 1:15000) {
   zvalue_A <- abs(qnorm(min(pvalues_A)/2,
                        lower.tail = FALSE))
   
-  if (abs(zvalue_A) >= qnorm(0.975)) {
+  if (min(pvalues_A) <= 0.05) {
+    zvalue_A <- abs(qnorm(min(pvalues_A)/2,
+                          lower.tail = FALSE))
     zscores_A[A] <- zvalue_A
     A <- A + 1
   }
@@ -267,6 +269,11 @@ pvalues01_D <- pvalues_scenarioD[pvalues_scenarioD < 0.01]
 prop01_D <- (length(pvalues01_D)/15000)*100
 
 proportions_D <- c(prop1_D, prop05_D, prop01_D)
+
+
+
+
+
 
 
 
