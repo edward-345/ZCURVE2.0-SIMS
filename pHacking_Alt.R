@@ -68,3 +68,5 @@ fit_alpha <- zcurve(zscores_alpha)
 
 alpha_plot <- plot(
   fit_alpha, CI = TRUE, annotation = TRUE, main = "Scenario A under Alternate")
+
+

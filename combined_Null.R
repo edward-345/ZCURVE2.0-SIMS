@@ -86,4 +86,6 @@ prop05_X <- (length(pvalues05_X)/15000)*100
 pvalues01_X <- pvalues_scenarioX[pvalues_scenarioX < 0.01]
 prop01_X <- (length(pvalues01_X)/15000)*100
 
-proportions_X <- c(prop1_X, prop05_X, prop01_X)
+proportions_X <- c(prop1_X, prop05_X, prop01_X) 
+
+

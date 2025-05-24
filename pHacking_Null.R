@@ -3,6 +3,7 @@ library(faux)
 library(truncnorm)
 library(tidyverse)
 library(ggplot2)
+source("helper_functions.R")
 set.seed(666)
 
 #General case of Z-Curve under null hypothesis
@@ -44,25 +45,14 @@ for (i in 1:15000) {
     n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
     varnames = c("Dependent1","Dependent2"))
   
-  result1 <- t.test(control_A$Control1, exp_A$Dependent1,
-                    var.equal = TRUE)
-  pvalue1 <- result1$p.value
-  result2 <- t.test(control_A$Control2, exp_A$Dependent2,
-                    var.equal = TRUE)
-  pvalue2 <- result2$p.value
-  result3 <- t.test(rowMeans(cbind(control_A$Control1, control_A$Control2)),
-                    rowMeans(cbind(exp_A$Dependent1, exp_A$Dependent2)),
-                    var.equal = TRUE)
-  pvalue3 <- result3$p.value
+  pvalue_A <- sitA_ttests(control_A$Control1, control_A$Control2,
+              exp_A$Dependent1, exp_A$Dependent2)
+  min_pvalue <- min(pvalue_A)
   
-  pvalues_scenarioA[i] <- min(
-    c(result1$p.value, result2$p.value, result3$p.value))
-  pvalues_A <- c(pvalue1, pvalue2, pvalue3)
-  zvalue_A <- abs(qnorm(min(pvalues_A)/2,
-                       lower.tail = FALSE))
+  pvalues_scenarioA[i] <- min_pvalue
   
-  if (min(pvalues_A) <= 0.05) {
-    zvalue_A <- abs(qnorm(min(pvalues_A)/2,
+  if (min_pvalue <= 0.05) {
+    zvalue_A <- abs(qnorm(min_pvalue/2,
                           lower.tail = FALSE))
     zscores_A[A] <- zvalue_A
     A <- A + 1
