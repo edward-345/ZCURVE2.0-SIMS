@@ -6,10 +6,10 @@ pvalues_scenarioX <- numeric(15000)
 
 for (i in 1:15000) {
   control_X <- rnorm_multi(
-    n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+    n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
     varnames = c("Control1","Control2"))
   exp_X <- rnorm_multi(
-    n = 10, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
+    n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
     varnames = c("Dependent1","Dependent2"))
   
   result1 <- t.test(control_X$Control1, exp_X$Dependent1,
@@ -76,16 +76,10 @@ for (i in 1:15000) {
 
 zscores_X <- zscores_X[1:(X - 1)]
 
+fit_X <- zcurve(zscores_X)
+
+X_plot <- plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario A+B")
+
 #Note that the proportion of p-values align with Simmons et al., 2011
-pvalues1_X <- pvalues_scenarioX[pvalues_scenarioX < 0.1]
-prop1_X <- (length(pvalues1_X)/15000)*100
-
-pvalues05_X <- pvalues_scenarioX[pvalues_scenarioX < 0.05]
-prop05_X <- (length(pvalues05_X)/15000)*100
-
-pvalues01_X <- pvalues_scenarioX[pvalues_scenarioX < 0.01]
-prop01_X <- (length(pvalues01_X)/15000)*100
-
-proportions_X <- c(prop1_X, prop05_X, prop01_X) 
-
+proportions_X <- sig_pvalues(pvalues_scenarioX)
 
