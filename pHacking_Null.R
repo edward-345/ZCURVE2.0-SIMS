@@ -66,16 +66,7 @@ fit_A <- zcurve(zscores_A)
 A_plot <- plot(fit_A, CI = TRUE, annotation = TRUE, main = "Scenario A")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
-pvalues1_A <- pvalues_scenarioA[pvalues_scenarioA < 0.1]
-prop1_A <- (length(pvalues1_A)/15000)*100
-
-pvalues05_A <- pvalues_scenarioA[pvalues_scenarioA < 0.05]
-prop05_A <- (length(pvalues05_A)/15000)*100
-
-pvalues01_A <- pvalues_scenarioA[pvalues_scenarioA < 0.01]
-prop01_A <- (length(pvalues01_A)/15000)*100
-
-proportions_A <- c(prop1_A, prop05_A, prop01_A)
+proportions_A <- sig_pvalues(pvalues_scenarioA)
 
 #Situation B: Optional Stopping
 zscores_B <- numeric(15000)
@@ -84,8 +75,8 @@ B <- 1
 pvalues_scenarioB <- numeric(15000)
 
 for (i in 1:15000) {
-  control_B <- rnorm(n = 10, mean = 0, sd = 1)
-  exp_B <- rnorm(n = 10, mean = 0, sd = 1)
+  control_B <- rnorm(n = 20, mean = 0, sd = 1)
+  exp_B <- rnorm(n = 20, mean = 0, sd = 1)
   result_B <- t.test(control_B, exp_B, var.equal = TRUE)
   pvalue_B <- result_B$p.value
   
@@ -119,16 +110,7 @@ fit_B <- zcurve(zscores_B)
 B_plot <- plot(fit_B, CI = TRUE, annotation = TRUE, main = "Scenario B")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
-pvalues1_B <- pvalues_scenarioB[pvalues_scenarioB < 0.1]
-prop1_B <- (length(pvalues1_B)/15000)*100
-
-pvalues05_B <- pvalues_scenarioB[pvalues_scenarioB < 0.05]
-prop05_B <- (length(pvalues05_B)/15000)*100
-
-pvalues01_B <- pvalues_scenarioB[pvalues_scenarioB < 0.01]
-prop01_B <- (length(pvalues01_B)/15000)*100
-
-proportions_B <- c(prop1_B, prop05_B, prop01_B)
+proportions_B <- sig_pvalues(pvalues_scenarioB)
 
 #Situation C: Main effect or interaction term ANCOVAs
 zscores_C <- numeric(15000)
@@ -190,16 +172,7 @@ fit_C <- zcurve(zscores_C)
 C_plot <- plot(fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
-pvalues1_C <- pvalues_scenarioC[pvalues_scenarioC < 0.1]
-prop1_C <- (length(pvalues1_C)/15000)*100
-
-pvalues05_C <- pvalues_scenarioC[pvalues_scenarioC < 0.05]
-prop05_C <- (length(pvalues05_C)/15000)*100
-
-pvalues01_C <- pvalues_scenarioC[pvalues_scenarioC < 0.01]
-prop01_C <- (length(pvalues01_C)/15000)*100
-
-proportions_C <- c(prop1_C, prop05_C, prop01_C)
+proportions_C <- sig_pvalues(pvalues_scenarioC)
 
 #Situation D: Ordinal test condition
 zscores_D <- numeric(15000)
@@ -249,16 +222,7 @@ fit_D <- zcurve(zscores_D)
 D_plot <- plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
-pvalues1_D <- pvalues_scenarioD[pvalues_scenarioD < 0.1]
-prop1_D <- (length(pvalues1_D)/15000)*100
-
-pvalues05_D <- pvalues_scenarioD[pvalues_scenarioD < 0.05]
-prop05_D <- (length(pvalues05_D)/15000)*100
-
-pvalues01_D <- pvalues_scenarioD[pvalues_scenarioD < 0.01]
-prop01_D <- (length(pvalues01_D)/15000)*100
-
-proportions_D <- c(prop1_D, prop05_D, prop01_D)
+proportions_D <- sig_pvalues(pvalues_scenarioD)
 
 
 
