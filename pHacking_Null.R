@@ -84,12 +84,12 @@ for (i in 1:15000) {
     pvalues_scenarioB[i] <- pvalue_B
     zvalue_B <- abs(qnorm(pvalue_B/2, lower.tail = FALSE))
     zscores_B[B] <- zvalue_B
-    B <- B+1
+    B <- B + 1
   } else {
     extracontrol_B <- rnorm(n = 10, mean = 0, sd = 1)
     extraexp_B <- rnorm(n = 10, mean = 0, sd = 1)
     extraresult_B <- t.test(c(control_B, extracontrol_B),
-                            c(exp_B, extraexp_B))
+                            c(exp_B, extraexp_B), var.equal = TRUE)
     extrapvalue_B <- extraresult_B$p.value
     
     if (extrapvalue_B <= 0.05) {
@@ -223,7 +223,6 @@ D_plot <- plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
 proportions_D <- sig_pvalues(pvalues_scenarioD)
-
 
 
 
