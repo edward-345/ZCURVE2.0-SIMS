@@ -1,4 +1,4 @@
-source("zcurve.R")
+source("pHacking_Null.R")
 
 #General case of Z-Curve under alternate hypothesis
 zscores_alt <- numeric(15000)
