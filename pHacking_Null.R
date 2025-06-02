@@ -205,7 +205,7 @@ C_plot <- plot(fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
 proportions_C <- sig_pvalues(pvalues_scenarioC)
 
 #-------------------------------------------------------------------------------
-#Situation D: Ordinal test condition
+#SITUATION D: Ordinal test condition
 zscores_D <- numeric(15000)
 D <- 1 
 
