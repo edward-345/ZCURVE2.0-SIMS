@@ -18,3 +18,34 @@ sig_pvalues <- function(sig_p) {
   prop01 <- (length(pvalues01)/length(sig_p))*100
   return(c(prop1, prop05, prop01))
 }
+
+sitZ_ttests <- function(dataset) {
+  LowMed_DV1 <- dataset %>%
+    filter(conditions %in% c("low", "medium")) %>%
+    t.test(DV1 ~ conditions) %>%
+    .$p.value
+  LowHigh_DV1 <- dataset %>%
+    filter(conditions %in% c("low", "high")) %>%
+    t.test(DV1 ~ conditions) %>%
+    .$p.value
+  MedHigh_DV1 <- dataset %>%
+    filter(conditions %in% c("med", "high")) %>%
+    t.test(DV1 ~ conditions) %>%
+    .$p.value
+  
+  LowMed_DV2 <- dataset %>%
+    filter(conditions %in% c("low", "medium")) %>%
+    t.test(DV2 ~ conditions) %>%
+    .$p.value
+  LowHigh_DV2 <- dataset %>%
+    filter(conditions %in% c("low", "high")) %>%
+    t.test(DV2 ~ conditions) %>%
+    .$p.value
+  MedHigh_DV2 <- dataset %>%
+    filter(conditions %in% c("med", "high")) %>%
+    t.test(DV2 ~ conditions) %>%
+    .$p.value
+  
+  return(c(LowMed_DV1, LowHigh_DV1, MedHigh_DV1,
+           LowMed_DV2, LowHigh_DV2, MedHigh_DV2))
+}
