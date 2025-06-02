@@ -22,28 +22,28 @@ sig_pvalues <- function(sig_p) {
 sitZ_ttests <- function(dataset) {
   LowMed_DV1 <- dataset %>%
     filter(conditions %in% c("low", "medium")) %>%
-    t.test(DV1 ~ conditions) %>%
+    t.test(DV1 ~ conditions, data = .) %>%
     .$p.value
   LowHigh_DV1 <- dataset %>%
     filter(conditions %in% c("low", "high")) %>%
-    t.test(DV1 ~ conditions) %>%
+    t.test(DV1 ~ conditions, data = .) %>%
     .$p.value
   MedHigh_DV1 <- dataset %>%
-    filter(conditions %in% c("med", "high")) %>%
-    t.test(DV1 ~ conditions) %>%
+    filter(conditions %in% c("medium", "high")) %>%
+    t.test(DV1 ~ conditions, data = .) %>%
     .$p.value
   
   LowMed_DV2 <- dataset %>%
     filter(conditions %in% c("low", "medium")) %>%
-    t.test(DV2 ~ conditions) %>%
+    t.test(DV2 ~ conditions, data = .) %>%
     .$p.value
   LowHigh_DV2 <- dataset %>%
     filter(conditions %in% c("low", "high")) %>%
-    t.test(DV2 ~ conditions) %>%
+    t.test(DV2 ~ conditions, data = .) %>%
     .$p.value
   MedHigh_DV2 <- dataset %>%
-    filter(conditions %in% c("med", "high")) %>%
-    t.test(DV2 ~ conditions) %>%
+    filter(conditions %in% c("medium", "high")) %>%
+    t.test(DV2 ~ conditions, data = .) %>%
     .$p.value
   
   return(c(LowMed_DV1, LowHigh_DV1, MedHigh_DV1,

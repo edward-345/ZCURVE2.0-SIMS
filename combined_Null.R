@@ -1,4 +1,5 @@
 source("pHacking_Null.R")
+source("helper_functions.R")
 library(tidyverse)
 
 #----------------------------------------------
@@ -288,7 +289,7 @@ for (i in 1:15000) {
       rep(c("low", "medium", "high"), length.out = 20))
     
     #Adding Sit C "gender" variable for each observation
-    gender <- rbinom(n = 40, size = 1, p = 0.5)
+    gender <- rbinom(n = 20, size = 1, p = 0.5)
     gender <- as.factor(
       ifelse(gender == 1, "Female", "Male"))
     extradata_Z <- extradata_Z %>% mutate(gender = gender)
@@ -373,7 +374,7 @@ zscores_Z <- zscores_Z[1:(Z - 1)]
 
 fit_Z <- zcurve(zscores_Z)
 
-Z_plot <- plot(fit_Z, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C")
+Z_plot <- plot(fit_Z, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C+D")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
 proportions_Z <- sig_pvalues(pvalues_scenarioZ)
