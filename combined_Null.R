@@ -1,6 +1,7 @@
 source("pHacking_Null.R")
 library(tidyverse)
 
+#----------------------------------------------
 #SITUATIONS A,B COMBINED
 zscores_X <- numeric(15000)
 X <- 1 
@@ -63,6 +64,7 @@ X_plot <- plot(fit_X, CI = TRUE, annotation = TRUE, main = "Scenario A+B")
 #Note that the proportion of p-values align with Simmons et al., 2011
 proportions_X <- sig_pvalues(pvalues_scenarioX)
 
+#----------------------------------------------
 #SITUATIONS A,B,C COMBINED
 zscores_Y <- numeric(15000)
 Y <- 1 
@@ -190,7 +192,191 @@ Y_plot <- plot(fit_Y, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C")
 #Note that the proportion of p-values align with Simmons et al., 2011
 proportions_Y <- sig_pvalues(pvalues_scenarioY)
 
+#----------------------------------------------
+#SITUATIONS A,B,C,D COMBINED
+zscores_Z <- numeric(15000)
+Z <- 1 
 
+pvalues_scenarioZ <- numeric(15000)
+
+for (i in 1:15000) {
+  #Generating data frame of Control group DV1, DV2 outcome values for Sit A
+  data_Z <- rnorm_multi(
+    n = 40, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
+    varnames = c("DV1","DV2"))
+  
+  #Column of Sit D "conditions" variables added
+  data_Z$conditions <- sample(rep(c("low", "medium", "high"), length.out = 40))
+  
+  #Adding Sit C "gender" variable for each observation
+  gender <- rbinom(n = 40, size = 1, p = 0.5)
+  gender <- as.factor(
+    ifelse(gender == 1, "Female", "Male"))
+  data_Z <- data_Z %>% mutate(gender = gender)
+  
+  #T-tests for all 3 combinations of conditions (Sit D) for DV1 and DV2 (Sit A)
+  pvalues_Z <- sitZ_ttests(data_Z)
+  
+  #Gender main effect ANCOVA for DV1 (Sit C)
+  dv1_model <- lm(DV1 ~ conditions + gender, data = data_Z)
+  dv1_fitP <- summary(dv1_model)$coefficients[
+    grep("^conditions", rownames(summary(dv1_model)$coefficients)),
+    "Pr(>|t|)"]
+  pvalues_Z <- c(pvalues_Z, dv1_fitP)
+  
+  #Gender main effect ANCOVA for DV2 (Sit C)
+  dv2_model <- lm(DV2 ~ conditions + gender, data = data_Z)
+  dv2_fitP <- summary(dv2_model)$coefficients[
+    grep("^conditions", rownames(summary(dv2_model)$coefficients)),
+    "Pr(>|t|)"]
+  pvalues_Z <- c(pvalues_Z, dv2_fitP)
+  
+  #Gender*group interaction effect ANCOVA for DV1 (Sit C)
+  dv1_intmodel <- lm(DV1 ~ conditions*gender, data = data_Z)
+  dv1_intfitP <- summary(
+    dv1_intmodel)$coefficients[grep("conditions.*:genderMale",
+                                    rownames(summary(
+                                      dv1_intmodel)$coefficients)), "Pr(>|t|)"]
+  
+  #Gender*group interaction effect ANCOVA for DV2 (Sit C)
+  dv2_intmodel <- lm(DV2 ~ conditions*gender, data = data_Z)
+  dv2_intfitP <- summary(
+    dv2_intmodel)$coefficients[grep("conditions.*:genderMale",
+                                    rownames(summary(
+                                      dv2_intmodel)$coefficients)), "Pr(>|t|)"]
+  
+  #Interaction term ANCOVA model p-values
+  int_pvaluesZ <- c(dv1_intfitP, dv2_intfitP)
+  
+  #OLS regression for the linear trend of conditions for DV1 (Sit D)
+  lm_coding <- ifelse(data_Z$conditions == "low", -1,
+                      ifelse(data_Z$conditions == "medium", 0, 1))
+  
+  OLS_modelDV1 <- lm(DV1~lm_coding, data = data_Z)
+  DV1model_pvalue <- coef(summary(OLS_modelDV1))["lm_coding", "Pr(>|t|)"]
+  
+  OLS_modelDV2 <- lm(DV2~lm_coding, data = data_Z)
+  DV2model_pvalue <- coef(summary(OLS_modelDV2))["lm_coding", "Pr(>|t|)"]
+  
+  pvalues_Z <- c(pvalues_Z, DV1model_pvalue, DV2model_pvalue)
+  
+  #Minimum p-values
+  min_pvalueZ <- min(pvalues_Z)
+  mInt_pvalueZ <- min(int_pvaluesZ)
+  
+  if (mInt_pvalueZ <= 0.05) {
+    pvalues_scenarioZ[i] <- mInt_pvalueZ
+    zvalue_Z <- abs(qnorm(mInt_pvalueZ/2,
+                          lower.tail = FALSE))
+    zscores_Z[Z] <- zvalue_Z
+    Z <- Z + 1
+  } else if (min_pvalueZ <= 0.05){
+    #"if the effect of condition was significant in any of these analyses"
+    pvalues_scenarioZ[i] <- min_pvalueZ
+    zvalue_Z <- abs(qnorm(min_pvalueZ/2,
+                          lower.tail = FALSE))
+    zscores_Z[Z] <- zvalue_Z
+    Z <- Z + 1
+  } else {
+    #Adding 10 observations per cell from Situation B if non significant
+    extradata_Z <- rnorm_multi(
+      n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
+      varnames = c("DV1","DV2"))
+    
+    #Column of Sit D "conditions" variables added
+    extradata_Z$conditions <- sample(
+      rep(c("low", "medium", "high"), length.out = 20))
+    
+    #Adding Sit C "gender" variable for each observation
+    gender <- rbinom(n = 40, size = 1, p = 0.5)
+    gender <- as.factor(
+      ifelse(gender == 1, "Female", "Male"))
+    extradata_Z <- extradata_Z %>% mutate(gender = gender)
+    
+    #Combining additional observations to current data set
+    combined_dataZ <- rbind(data_Z, extradata_Z)
+    
+    #T-tests for all 3 combinations of conditions (Sit D) for DV1 and DV2 (Sit A)
+    extra_pvalsZ <- sitZ_ttests(combined_dataZ)
+    
+    #Gender main effect ANCOVA for DV1 (Sit C)
+    dv1_model <- lm(DV1 ~ conditions + gender, data = combined_dataZ)
+    dv1_fitP <- summary(dv1_model)$coefficients[
+      grep("^conditions", rownames(summary(dv1_model)$coefficients)),
+      "Pr(>|t|)"]
+    extra_pvalsZ <- c(extra_pvalsZ, dv1_fitP)
+    
+    #Gender main effect ANCOVA for DV2 (Sit C)
+    dv2_model <- lm(DV2 ~ conditions + gender, data = combined_dataZ)
+    dv2_fitP <- summary(dv2_model)$coefficients[
+      grep("^conditions", rownames(summary(dv2_model)$coefficients)),
+      "Pr(>|t|)"]
+    extra_pvalsZ <- c(extra_pvalsZ, dv2_fitP)
+    
+    #Gender*group interaction effect ANCOVA for DV1 (Sit C)
+    dv1_intmodel <- lm(DV1 ~ conditions*gender, data = combined_dataZ)
+    dv1_intfitP <- summary(
+      dv1_intmodel)$coefficients[grep("conditions.*:genderMale",
+                                      rownames(summary(
+                                        dv1_intmodel)$coefficients)),
+                                 "Pr(>|t|)"]
+    
+    #Gender*group interaction effect ANCOVA for DV2 (Sit C)
+    dv2_intmodel <- lm(DV2 ~ conditions*gender, data = combined_dataZ)
+    dv2_intfitP <- summary(
+      dv2_intmodel)$coefficients[grep("conditions.*:genderMale",
+                                      rownames(summary(
+                                        dv2_intmodel)$coefficients)),
+                                 "Pr(>|t|)"]
+    
+    #Interaction term ANCOVA model p-values
+    extraInt_pvalZ <- c(dv1_intfitP, dv2_intfitP)
+    
+    #OLS regression for the linear trend of conditions for DV1 (Sit D)
+    lm_coding <- ifelse(combined_dataZ$conditions == "low", -1,
+                        ifelse(combined_dataZ$conditions == "medium", 0, 1))
+    
+    OLS_modelDV1 <- lm(DV1~lm_coding, data = combined_dataZ)
+    DV1model_pvalue <- coef(summary(OLS_modelDV1))["lm_coding", "Pr(>|t|)"]
+    
+    OLS_modelDV2 <- lm(DV2~lm_coding, data = combined_dataZ)
+    DV2model_pvalue <- coef(summary(OLS_modelDV2))["lm_coding", "Pr(>|t|)"]
+    
+    extra_pvalsZ <- c(extra_pvalsZ, DV1model_pvalue, DV2model_pvalue)
+    
+    #Minimum p-values
+    ExMin_pvalueZ <- min(extra_pvalsZ)
+    ExMInt_pvalueZ <- min(extraInt_pvalZ)
+    
+    if (ExMInt_pvalueZ <= 0.05) {
+      pvalues_scenarioZ[i] <- ExMInt_pvalueZ
+      zvalue_Z <- abs(qnorm(ExMInt_pvalueZ/2,
+                            lower.tail = FALSE))
+      zscores_Z[Z] <- zvalue_Z
+      Z <- Z + 1
+    } else if (ExMin_pvalueZ <= 0.05) {
+      #"if the effect of condition was significant in any of these analyses"
+      pvalues_scenarioZ[i] <- ExMin_pvalueZ
+      zvalue_Z <- abs(qnorm(ExMin_pvalueZ/2,
+                            lower.tail = FALSE))
+      zscores_Z[Z] <- zvalue_Z
+      Z <- Z + 1
+    } else {
+      #If non are significant, add lowest p-value to pvalues_ScenarioZ vector
+      all_pvalZ <- c(ExMin_pvalueZ, ExMInt_pvalueZ)
+      pvalues_scenarioZ[i] <- min(all_pvalZ)
+    }
+  }
+}
+
+zscores_Z <- zscores_Z[1:(Z - 1)]
+
+fit_Z <- zcurve(zscores_Z)
+
+Z_plot <- plot(fit_Z, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C")
+
+#Note that the proportion of p-values align with Simmons et al., 2011
+proportions_Z <- sig_pvalues(pvalues_scenarioZ)
 
 
 
