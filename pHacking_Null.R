@@ -128,8 +128,6 @@ for (i in 1:k_sims) {
 zscores_B <- zscores_B[1:(B - 1)]
 
 fit_B <- zcurve(zscores_B, control = list(parallel = TRUE))
-summary(fit_B)
-str(summary(fit_B))
 
 B_plot <- plot(fit_B, CI = TRUE, annotation = TRUE, main = "Scenario B")
 
