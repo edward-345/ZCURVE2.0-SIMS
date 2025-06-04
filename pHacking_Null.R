@@ -101,7 +101,7 @@ for (i in 1:k_sims) {
     #If the result is significant, the researcher stops collecting data and 
     #reports the result
     pvalues_scenarioB[i] <- pvalue_B
-    zvalue_B <- abs(qnorm(pvalue_B/2, lower.tail = FALSE))
+    zvalue_B <- pval_converter(pvalue_B)
     zscores_B[B] <- zvalue_B
     B <- B + 1
   } else {
@@ -116,7 +116,7 @@ for (i in 1:k_sims) {
     if (extrapvalue_B <= 0.05) {
       #then again tests for significance
       pvalues_scenarioB[i] <- extrapvalue_B
-      extrazvalue_B <- abs(qnorm(extrapvalue_B/2, lower.tail = FALSE))
+      extrazvalue_B <- pval_converter(extrapvalue_B)
       zscores_B[B] <- extrazvalue_B
       B <- B+1
     } else {
@@ -177,22 +177,23 @@ for (i in 1:k_sims) {
   pvalues_C <- c(ttest=ttest_pvalue,
                  main=main_pvalue,
                  int=int_pvalue)
+  min_pvalueC <- min(pvalues_C)
   
   #We report a significant effect if the effect of condition was significant in 
   #any of these analyses or if the Gender×Condition interaction was significant.
   if (pvalues_C["int"] <= 0.05) {
     pvalues_scenarioC[i] <- pvalues_C["int"]
-    zvalue_C <- abs(qnorm(pvalues_C["int"]/2, lower.tail = FALSE))
+    zvalue_C <- pval_converter(pvalues_C["int"])
     zscores_C[C] <- zvalue_C
     C <- C + 1
   } else {
     if (min(pvalues_C) <= 0.05) {
-      pvalues_scenarioC[i] <- min(pvalues_C)
-      zvalue_C <- abs(qnorm(min(pvalues_C)/2, lower.tail = FALSE))
+      pvalues_scenarioC[i] <- min_pvalueC
+      zvalue_C <- pval_converter(min_pvalueC)
       zscores_C[C] <- zvalue_C
       C <- C + 1
     } else {
-      pvalues_scenarioC[i] <- min(pvalues_C)
+      pvalues_scenarioC[i] <- min_pvalueC
     }
   }
   
@@ -241,15 +242,16 @@ for (i in 1:k_sims) {
   
   pvalues_D <- c(LowMed_pvalue, LowHigh_pvalue, MedHigh_pvalue,
                  model_pvalue)
+  min_pvalueD <- min(pvalues_D)
   
   #Report if the lowest of all three t-tests and OLS regression is significant
-  if (min(pvalues_D) <= 0.05) {
-    pvalues_scenarioD[i] <- min(pvalues_D)
-    zvalue_D <- abs(qnorm(min(pvalues_D)/2, lower.tail = FALSE))
+  if (min_pvalueD <= 0.05) {
+    pvalues_scenarioD[i] <- min_pvalueD
+    zvalue_D <- pval_converter(min_pvalueD)
     zscores_D[D] <- zvalue_D
     D <- D + 1
   } else {
-    pvalues_scenarioD[i] <- min(pvalues_D)
+    pvalues_scenarioD[i] <- min_pvalueD
   }
   
 }
