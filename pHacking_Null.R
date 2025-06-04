@@ -151,37 +151,17 @@ for (i in 1:k_sims) {
     ifelse(gender == 1, "female", "male"))
   data_C <- data.frame(dv, gender, groups)
   
-  #Results for Situation C were obtained by conducting a t-test...
-  ttest_result <- t.test(dv ~ groups, data = data_C, var.equal = TRUE)
-  ttest_pvalue <- ttest_result$p.value
+  #List of p-values from ttest, main effect and interaction ANCOVAs
+  sitC_pvals <- sitC_tests(data_C)
   
-  #...an analysis of covariance with a gender main effect..
-  main_model <- lm(dv ~ groups + gender, data = data_C)
-  main_pvalue <- summary(
-    main_model)$coefficients["groupsexperimental", "Pr(>|t|)"]
-  
-  #...and an analysis of covariance with a gender interaction.
-  int_model <- lm(dv ~ groups*gender, data = data_C)
-  coefs <- coef(summary(int_model))
-  int_term_name <- grep("group.*:gender.*", rownames(coefs), value = TRUE)
-  if (length(int_term_name) == 1) {
-    int_pvalue <- coefs[int_term_name, "Pr(>|t|)"]
-  } else {
-    int_pvalue <- 1
-  }
-  
-  #Storing p-values from all t-test, ANCOVA of gender main effect, ANCOVA of
-  #gender and group interaction
-  pvalues_C <- c(ttest=ttest_pvalue,
-                 main=main_pvalue,
-                 int=int_pvalue)
-  min_pvalueC <- min(pvalues_C)
+  min_pvalueC <- min(sitC_pvals$pvalues_C)
+  int_pvalC <- sitC_pvals$int_pvalue
   
   #We report a significant effect if the effect of condition was significant in 
   #any of these analyses or if the Gender×Condition interaction was significant.
-  if (pvalues_C["int"] <= 0.05) {
-    pvalues_scenarioC[i] <- pvalues_C["int"]
-    zvalue_C <- pval_converter(pvalues_C["int"])
+  if (int_pvalC <= 0.05) {
+    pvalues_scenarioC[i] <- int_pvalC
+    zvalue_C <- pval_converter(int_pvalC)
     zscores_C[C] <- zvalue_C
     C <- C + 1
   } else {

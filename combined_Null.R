@@ -98,6 +98,7 @@ for (i in 1:k_sims) {
   dv1_fitP <- summary(dv1_model)$coefficients[
     "groupExperimental","Pr(>|t|)"]
   pvalues_Y <- c(pvalues_Y, dv1_fitP)
+  
   dv2_model <- lm(DV2 ~ group + gender, data = data_Y)
   dv2_fitP <- summary(dv2_model)$coefficients[
     "groupExperimental","Pr(>|t|)"]
@@ -106,6 +107,7 @@ for (i in 1:k_sims) {
   dv1_intmodel <- lm(DV1 ~ group*gender, data = data_Y)
   dv1_intfitP <- summary(dv1_intmodel)$coefficients[
     "groupExperimental:genderMale","Pr(>|t|)"]
+  
   dv2_intmodel <- lm(DV2 ~ group*gender, data = data_Y)
   dv2_intfitP <- summary(dv2_intmodel)$coefficients[
     "groupExperimental:genderMale","Pr(>|t|)"]

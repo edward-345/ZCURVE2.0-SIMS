@@ -54,3 +54,39 @@ sitZ_ttests <- function(dataset) {
 pval_converter <- function(p_val) {
   return(abs(qnorm(p_val/2, lower.tail = FALSE)))
 }
+
+#Situation C t-test and ANCOVA model
+sitC_tests <- function(dataset) {
+  #Results for Situation C were obtained by conducting a t-test...
+  ttest_result <- t.test(dv ~ groups, data = dataset, var.equal = TRUE)
+  ttest_pvalue <- ttest_result$p.value
+  
+  #...an analysis of covariance with a gender main effect..
+  main_model <- lm(dv ~ groups + gender, data = dataset)
+  main_pvalue <- summary(
+    main_model)$coefficients["groupsexperimental", "Pr(>|t|)"]
+  
+  #...and an analysis of covariance with a gender interaction.
+  int_model <- lm(dv ~ groups*gender, data = dataset)
+  coefs <- coef(summary(int_model))
+  int_term_name <- grep("group.*:gender.*", rownames(coefs), value = TRUE)
+  
+  #Edge case guard of sample consisting entirely of one gender for int_pvalue
+  if (length(int_term_name) == 1) {
+    int_pvalue <- coefs[int_term_name, "Pr(>|t|)"]
+  } else {
+    int_pvalue <- 1
+  }
+  
+  pvalues_C <- c(ttest_pvalue, main_pvalue)
+  return(list(pvalues_C,int_pvalue))
+}
+
+
+
+
+
+
+
+
+
