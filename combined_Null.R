@@ -25,8 +25,7 @@ for (i in 1:k_sims) {
   
   if (min_pvalueX <= 0.05) {
     pvalues_scenarioX[i] <- min_pvalueX
-    zvalue_X <- abs(qnorm(min_pvalueX/2,
-                          lower.tail = FALSE))
+    zvalue_X <- pval_converter(min_pvalueX)
     zscores_X[X] <- zvalue_X
     X <- X + 1
   } else {
@@ -48,7 +47,7 @@ for (i in 1:k_sims) {
     
     if (min_ExtraPvalue <= 0.05) {
       pvalues_scenarioX[i] <- min_ExtraPvalue
-      extrazvalue_X <- abs(qnorm(min_ExtraPvalue/2, lower.tail = FALSE))
+      extrazvalue_X <- pval_converter(min_ExtraPvalue)
       zscores_X[X] <- extrazvalue_X
       X <- X+1
     } else {
@@ -60,7 +59,7 @@ for (i in 1:k_sims) {
 
 zscores_X <- zscores_X[1:(X - 1)]
 
-fit_X <- zcurve(zscores_X)
+fit_X <- zcurve(zscores_X, control = list(parallel = TRUE))
 
 X_plot <- plot(fit_X, CI = TRUE, annotation = TRUE, main = "Scenario A+B")
 
@@ -117,14 +116,12 @@ for (i in 1:k_sims) {
   
   if (mInt_pvalueY <= 0.05) {
     pvalues_scenarioY[i] <- mInt_pvalueY
-    zvalue_Y <- abs(qnorm(mInt_pvalueY/2,
-                          lower.tail = FALSE))
+    zvalue_Y <- pval_converter(mInt_pvalueY)
     zscores_Y[Y] <- zvalue_Y
     Y <- Y + 1
   } else if (min_pvalueY <= 0.05){
     pvalues_scenarioY[i] <- min_pvalueY
-    zvalue_Y <- abs(qnorm(min_pvalueY/2,
-                          lower.tail = FALSE))
+    zvalue_Y <- pval_converter(min_pvalueY)
     zscores_Y[Y] <- zvalue_Y
     Y <- Y + 1
     } else {
@@ -171,12 +168,12 @@ for (i in 1:k_sims) {
     
     if (ExmInt_pvalY <= 0.05) {
       pvalues_scenarioY[i] <- ExmInt_pvalY
-      extrazvalue_Y <- abs(qnorm(ExmInt_pvalY/2, lower.tail = FALSE))
+      extrazvalue_Y <- pval_converter(ExmInt_pvalY)
       zscores_Y[Y] <- extrazvalue_Y
       Y <- Y+1
     } else if (Exmin_pvalY <= 0.05) {
       pvalues_scenarioY[i] <- Exmin_pvalY
-      extrazvalue_Y <- abs(qnorm(Exmin_pvalY/2, lower.tail = FALSE))
+      extrazvalue_Y <- pval_converter(Exmin_pvalY)
       zscores_Y[Y] <- extrazvalue_Y
       Y <- Y+1
     } else {
@@ -188,7 +185,7 @@ for (i in 1:k_sims) {
 
 zscores_Y <- zscores_Y[1:(Y - 1)]
 
-fit_Y <- zcurve(zscores_Y)
+fit_Y <- zcurve(zscores_Y, control = list(parallel = TRUE))
 
 Y_plot <- plot(fit_Y, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C")
 
@@ -269,15 +266,13 @@ for (i in 1:k_sims) {
   
   if (mInt_pvalueZ <= 0.05) {
     pvalues_scenarioZ[i] <- mInt_pvalueZ
-    zvalue_Z <- abs(qnorm(mInt_pvalueZ/2,
-                          lower.tail = FALSE))
+    zvalue_Z <- pval_converter(mInt_pvalueZ)
     zscores_Z[Z] <- zvalue_Z
     Z <- Z + 1
   } else if (min_pvalueZ <= 0.05){
     #"if the effect of condition was significant in any of these analyses"
     pvalues_scenarioZ[i] <- min_pvalueZ
-    zvalue_Z <- abs(qnorm(min_pvalueZ/2,
-                          lower.tail = FALSE))
+    zvalue_Z <- pval_converter(min_pvalueZ)
     zscores_Z[Z] <- zvalue_Z
     Z <- Z + 1
   } else {
@@ -353,15 +348,13 @@ for (i in 1:k_sims) {
     
     if (ExMInt_pvalueZ <= 0.05) {
       pvalues_scenarioZ[i] <- ExMInt_pvalueZ
-      zvalue_Z <- abs(qnorm(ExMInt_pvalueZ/2,
-                            lower.tail = FALSE))
+      zvalue_Z <- pval_converter(ExMInt_pvalueZ)
       zscores_Z[Z] <- zvalue_Z
       Z <- Z + 1
     } else if (ExMin_pvalueZ <= 0.05) {
       #"if the effect of condition was significant in any of these analyses"
       pvalues_scenarioZ[i] <- ExMin_pvalueZ
-      zvalue_Z <- abs(qnorm(ExMin_pvalueZ/2,
-                            lower.tail = FALSE))
+      zvalue_Z <- pval_converter(ExMin_pvalueZ)
       zscores_Z[Z] <- zvalue_Z
       Z <- Z + 1
     } else {
@@ -374,7 +367,7 @@ for (i in 1:k_sims) {
 
 zscores_Z <- zscores_Z[1:(Z - 1)]
 
-fit_Z <- zcurve(zscores_Z)
+fit_Z <- zcurve(zscores_Z, control = list(parallel = TRUE))
 
 Z_plot <- plot(fit_Z, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C+D")
 
