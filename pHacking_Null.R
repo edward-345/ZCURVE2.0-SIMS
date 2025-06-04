@@ -23,7 +23,7 @@ for (i in 1:k_sims) {
   
   result <- t.test(control_group, exp_group, var.equal = TRUE)
   p_value <- result$p.value
-  z_value <- abs(qnorm(p_value/2, lower.tail = FALSE))
+  z_value <- pval_converter(p_value)
   
   if (abs(z_value) >= qnorm(0.975)) {
     z_scores[j] <- z_value
@@ -33,7 +33,7 @@ for (i in 1:k_sims) {
 
 z_scores <- z_scores[1:(j - 1)]
 
-fit <- zcurve(z_scores)
+fit <- zcurve(z_scores, control = list(parallel = TRUE))
 
 sims_plot <- plot(
   fit, CI = TRUE, annotation = TRUE, main = "Simulation under Null")
@@ -67,8 +67,7 @@ for (i in 1:k_sims) {
   #If the smallest p-value of the three t-tests is significant at .05, convert 
   #to z-score and add to zscores_A vector
   if (min_pvalue <= 0.05) {
-    zvalue_A <- abs(qnorm(min_pvalue/2,
-                          lower.tail = FALSE))
+    zvalue_A <- pval_converter(min_pvalue)
     zscores_A[A] <- zvalue_A
     A <- A + 1
   }
@@ -77,7 +76,7 @@ for (i in 1:k_sims) {
 #Trim unused cells
 zscores_A <- zscores_A[1:(A - 1)]
 
-fit_A <- zcurve(zscores_A)
+fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
 
 A_plot <- plot(fit_A, CI = TRUE, annotation = TRUE, main = "Scenario A")
 
@@ -201,7 +200,7 @@ for (i in 1:k_sims) {
 
 zscores_C <- zscores_C[1:(C - 1)]
 
-fit_C <- zcurve(zscores_C)
+fit_C <- zcurve(zscores_C, control = list(parallel = TRUE))
 
 C_plot <- plot(fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
 
@@ -257,7 +256,7 @@ for (i in 1:k_sims) {
 
 zscores_D <- zscores_D[1:(D - 1)]
 
-fit_D <- zcurve(zscores_D)
+fit_D <- zcurve(zscores_D, control = list(parallel = TRUE))
 
 D_plot <- plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
 
