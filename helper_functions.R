@@ -49,3 +49,8 @@ sitZ_ttests <- function(dataset) {
   return(c(LowMed_DV1, LowHigh_DV1, MedHigh_DV1,
            LowMed_DV2, LowHigh_DV2, MedHigh_DV2))
 }
+
+#Convert p-value to z-score
+pval_converter <- function(p_val) {
+  return(abs(qnorm(p_val/2, lower.tail = FALSE)))
+}
