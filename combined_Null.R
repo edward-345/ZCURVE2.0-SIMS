@@ -2,14 +2,16 @@ source("pHacking_Null.R")
 source("helper_functions.R")
 library(tidyverse)
 
+#Number of simulations
+k_sims <- 15000
 #----------------------------------------------
 #SITUATIONS A,B COMBINED
-zscores_X <- numeric(15000)
+zscores_X <- numeric(k_sims)
 X <- 1 
 
-pvalues_scenarioX <- numeric(15000)
+pvalues_scenarioX <- numeric(k_sims)
 
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   control_X <- rnorm_multi(
     n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
     varnames = c("Control1","Control2"))
@@ -67,12 +69,12 @@ proportions_X <- sig_pvalues(pvalues_scenarioX)
 
 #----------------------------------------------
 #SITUATIONS A,B,C COMBINED
-zscores_Y <- numeric(15000)
+zscores_Y <- numeric(k_sims)
 Y <- 1 
 
-pvalues_scenarioY <- numeric(15000)
+pvalues_scenarioY <- numeric(k_sims)
 
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   control_Y <- rnorm_multi(
     n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
     varnames = c("DV1","DV2"))
@@ -195,12 +197,12 @@ proportions_Y <- sig_pvalues(pvalues_scenarioY)
 
 #----------------------------------------------
 #SITUATIONS A,B,C,D COMBINED
-zscores_Z <- numeric(15000)
+zscores_Z <- numeric(k_sims)
 Z <- 1 
 
-pvalues_scenarioZ <- numeric(15000)
+pvalues_scenarioZ <- numeric(k_sims)
 
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   #Generating data frame of Control group DV1, DV2 outcome values for Sit A
   data_Z <- rnorm_multi(
     n = 40, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,

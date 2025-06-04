@@ -6,14 +6,16 @@ library(ggplot2)
 source("helper_functions.R")
 set.seed(666)
 
+#Number of simulations
+k_sims <- 15000
 #----------------------------------------------
 #General case of Z-Curve under null hypothesis
-z_scores <- numeric(15000)
+z_scores <- numeric(k_sims)
 j <- 1
 
 #Baseline is a two-condition design with 20 observations per cell
 #Each of the 15,000 observations independently drawn from a normal distribution
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   #Standard normal distribution N(0,1) since false positive occurs under 
   #the null hypothesis
   control_group <- rnorm(n = 20, mean = 0, sd = 1)
@@ -38,13 +40,13 @@ sims_plot <- plot(
 
 #-------------------------------------------------------------------------------
 #SITUATION A: Two DVs for each observation
-zscores_A <- numeric(15000)
+zscores_A <- numeric(k_sims)
 A <- 1
 
 #Vector of all 15,000 p-values generated
-pvalues_scenarioA <- numeric(15000)
+pvalues_scenarioA <- numeric(k_sims)
 
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   #Generating control and exp group from N(0,1) with 2 DVs correlated by r=0.5 
   control_A <- rnorm_multi(
     n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
@@ -84,12 +86,12 @@ proportions_A <- sig_pvalues(pvalues_scenarioA)
 
 #-------------------------------------------------------------------------------
 #SITUATION B: Optional Stopping
-zscores_B <- numeric(15000)
+zscores_B <- numeric(k_sims)
 B <- 1 
 
-pvalues_scenarioB <- numeric(15000)
+pvalues_scenarioB <- numeric(k_sims)
 
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   #Conducting one t-test after collecting 20 observations per cell 
   control_B <- rnorm(n = 20, mean = 0, sd = 1)
   exp_B <- rnorm(n = 20, mean = 0, sd = 1)
@@ -126,7 +128,9 @@ for (i in 1:15000) {
 
 zscores_B <- zscores_B[1:(B - 1)]
 
-fit_B <- zcurve(zscores_B)
+fit_B <- zcurve(zscores_B, control = list(parallel = TRUE))
+summary(fit_B)
+str(summary(fit_B))
 
 B_plot <- plot(fit_B, CI = TRUE, annotation = TRUE, main = "Scenario B")
 
@@ -135,12 +139,12 @@ proportions_B <- sig_pvalues(pvalues_scenarioB)
 
 #-------------------------------------------------------------------------------
 #SITUATION C: Main effect or interaction term ANCOVAs
-zscores_C <- numeric(15000)
+zscores_C <- numeric(k_sims)
 C <- 1 
 
-pvalues_scenarioC <- numeric(15000)
+pvalues_scenarioC <- numeric(k_sims)
 
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   groups <- sample(
     rep(c("control", "experimental"), each = 20))
   dv <- rnorm(n = 40, mean = 0, sd = 1)
@@ -206,12 +210,12 @@ proportions_C <- sig_pvalues(pvalues_scenarioC)
 
 #-------------------------------------------------------------------------------
 #SITUATION D: Ordinal test condition
-zscores_D <- numeric(15000)
+zscores_D <- numeric(k_sims)
 D <- 1 
 
-pvalues_scenarioD <- numeric(15000)
+pvalues_scenarioD <- numeric(k_sims)
 
-for (i in 1:15000) {
+for (i in 1:k_sims) {
   #Running three conditions (e.g., low, medium, high) 
   conditions <- sample(
     rep(c("low", "medium", "high"), length.out = 40))
