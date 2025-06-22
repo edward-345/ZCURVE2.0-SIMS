@@ -87,3 +87,64 @@ fit_beta <- zcurve(zscores_beta, control = list(parallel = TRUE))
 
 beta_plot <- plot(fit_beta, CI = TRUE, annotation = TRUE,
                   main = "Scenario Beta")
+#-------------------------------------------------------------------------------
+#Situation Gamma: Main effect or interaction term ANCOVAs
+zscores_gamma <- numeric(k_sig)
+gamma <- 1
+
+while (gamma != k_sig + 1) {
+  groups <- sample(
+    rep(c("control", "experimental"), each = 20))
+  dv <- rnorm(n = 40, mean = 0, sd = 1)
+  #Each observation was assigned a 50% probability of being female
+  gender <- rbinom(n = 40, size = 1, p = 0.5)
+  gender <- as.factor(
+    ifelse(gender == 1, "female", "male"))
+  data_gamma <- data.frame(dv, gender, groups)
+  
+  #Results for Situation C were obtained by conducting a t-test...
+  ttest_result <- t.test(dv ~ groups, data = data_gamma, var.equal = TRUE)
+  ttest_pvalue <- ttest_result$p.value
+  
+  #...an analysis of covariance with a gender main effect..
+  main_model <- lm(dv ~ groups + gender, data = data_gamma)
+  main_pvalue <- summary(
+    main_model)$coefficients["groupsexperimental", "Pr(>|t|)"]
+  
+  #...and an analysis of covariance with a gender interaction.
+  int_model <- lm(dv ~ groups*gender, data = data_gamma)
+  coefs <- coef(summary(int_model))
+  int_term_name <- grep("group.*:gender.*", rownames(coefs), value = TRUE)
+  
+  #Edge case guard of sample consisting entirely of one gender for int_pvalue
+  if (length(int_term_name) == 1) {
+    int_pvalue <- coefs[int_term_name, "Pr(>|t|)"]
+  } else {
+    int_pvalue <- 1
+  }
+  
+  pvalues_gamma <- c(ttest_pvalue, main_pvalue)
+  
+  minpval_gamma <- min(pvalues_gamma)
+  
+  #We report a significant effect if the effect of condition was significant in 
+  #any of these analyses or if the Gender×Condition interaction was significant.
+  if (int_pvalue <= 0.05) {
+    zvalue_gamma <- pval_converter(int_pvalue)
+    zscores_gamma[gamma] <- zvalue_gamma
+    gamma <- gamma + 1
+  } else {
+    if (minpval_gamma <= 0.05) {
+      zvalue_gamma <- pval_converter(minpval_gamma)
+      zscores_gamma[gamma] <- zvalue_gamma
+      gamma <- gamma + 1
+    }
+  }
+}
+
+zscores_gamma
+
+fit_gamma <- zcurve(zscores_gamma, control = list(parallel = TRUE))
+
+gamma_plot <- plot(fit_gamma, CI = TRUE, annotation = TRUE,
+                   main = "Scenario Gamma")
