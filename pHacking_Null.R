@@ -151,21 +151,40 @@ for (i in 1:k_sims) {
     ifelse(gender == 1, "female", "male"))
   data_C <- data.frame(dv, gender, groups)
   
-  #List of p-values from ttest, main effect and interaction ANCOVAs
-  sitC_pvals <- sitC_tests(data_C)
+  #Results for Situation C were obtained by conducting a t-test...
+  ttest_result <- t.test(dv ~ groups, data = data_C, var.equal = TRUE)
+  ttest_pvalue <- ttest_result$p.value
   
-  min_pvalueC <- min(sitC_pvals$pvalues_C)
-  int_pvalC <- sitC_pvals$int_pvalue
+  #...an analysis of covariance with a gender main effect..
+  main_model <- lm(dv ~ groups + gender, data = data_C)
+  main_pvalue <- summary(
+    main_model)$coefficients["groupsexperimental", "Pr(>|t|)"]
+  
+  #...and an analysis of covariance with a gender interaction.
+  int_model <- lm(dv ~ groups*gender, data = data_C)
+  coefs <- coef(summary(int_model))
+  int_term_name <- grep("group.*:gender.*", rownames(coefs), value = TRUE)
+  
+  #Edge case guard of sample consisting entirely of one gender for int_pvalue
+  if (length(int_term_name) == 1) {
+    int_pvalue <- coefs[int_term_name, "Pr(>|t|)"]
+  } else {
+    int_pvalue <- 1
+  }
+  
+  pvalues_C <- c(ttest_pvalue, main_pvalue)
+  
+  min_pvalueC <- min(pvalues_C)
   
   #We report a significant effect if the effect of condition was significant in 
   #any of these analyses or if the Gender×Condition interaction was significant.
-  if (int_pvalC <= 0.05) {
-    pvalues_scenarioC[i] <- int_pvalC
-    zvalue_C <- pval_converter(int_pvalC)
+  if (int_pvalue <= 0.05) {
+    pvalues_scenarioC[i] <- int_pvalue
+    zvalue_C <- pval_converter(int_pvalue)
     zscores_C[C] <- zvalue_C
     C <- C + 1
   } else {
-    if (min(pvalues_C) <= 0.05) {
+    if (min_pvalueC <= 0.05) {
       pvalues_scenarioC[i] <- min_pvalueC
       zvalue_C <- pval_converter(min_pvalueC)
       zscores_C[C] <- zvalue_C
@@ -185,6 +204,7 @@ C_plot <- plot(fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
 
 #Note that the proportion of p-values align with Simmons et al., 2011
 proportions_C <- sig_pvalues(pvalues_scenarioC)
+proportions_C 
 
 #-------------------------------------------------------------------------------
 #SITUATION D: Ordinal test condition

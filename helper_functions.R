@@ -79,7 +79,8 @@ sitC_tests <- function(dataset) {
   }
   
   pvalues_C <- c(ttest_pvalue, main_pvalue)
-  return(list(pvalues_C,int_pvalue))
+  return(list(pvalues_C = pvalues_C,
+              int_pvalue = int_pvalue))
 }
 
 
