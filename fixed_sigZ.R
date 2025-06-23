@@ -13,7 +13,7 @@ k_sig <- 15000
 zscores_alpha <- numeric(k_sig)
 alpha <- 1
 
-while (alpha != k_sig + 1) {
+while (alpha <= k_sig) {
   #Generating control and exp group from N(0,1) with 2 DVs correlated by r=0.5 
   control_alpha <- rnorm_multi(
     n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
@@ -50,7 +50,7 @@ alpha_plot <- plot(fit_alpha, CI = TRUE, annotation = TRUE,
 zscores_beta <- numeric(k_sig)
 beta <- 1 
 
-while (beta != k_sig + 1) {
+while (beta <= k_sig) {
   #Conducting one t-test after collecting 20 observations per cell 
   control_beta <- rnorm(n = 20, mean = 0, sd = 1)
   exp_beta <- rnorm(n = 20, mean = 0, sd = 1)
@@ -92,7 +92,7 @@ beta_plot <- plot(fit_beta, CI = TRUE, annotation = TRUE,
 zscores_gamma <- numeric(k_sig)
 gamma <- 1
 
-while (gamma != k_sig + 1) {
+while (gamma <= k_sig) {
   groups <- sample(
     rep(c("control", "experimental"), each = 20))
   dv <- rnorm(n = 40, mean = 0, sd = 1)
