@@ -5,9 +5,10 @@ library(tidyverse)
 library(ggplot2)
 source("helper_functions.R")
 set.seed(666)
+options(scipen = 999)
 
 #Number of significant z-scores to be produced
-k_sig <- 1500
+k_sig <- 100
 #----------------------------------------------
 #Situation A,B combined, fixed number of significant z-scores
 zscores_chi <- numeric(k_sig)
@@ -181,18 +182,32 @@ psi_plot <- plot(fit_psi, CI = TRUE, annotation = TRUE, main = "Scenario Psi")
 zscores_zeta <- numeric(k_sig)
 zeta <- 1
 
-while (zeta <= k_sig) {
+pop.d <- seq(0, 0.5, 0.1)
+n <- c(10, 20, 40, 100, 200)
+conditions = 3
+N = n*conditions
+sim.i = 1
+res.sim = c()
+
+k_sim = 100
+
+for (sim.i in 1:k_sim) {
   #Generating data frame of Control group DV1, DV2 outcome values for Sit A
   data_zeta <- rnorm_multi(
-    n = 40, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
+    n = N, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
     varnames = c("DV1","DV2"))
   
+  data_zeta <- data.frame(data_zeta)
+  
   #Column of Sit D "conditions" variables added
-  data_zeta$conditions <- sample(rep(c("low", "medium", "high"),
-                                     length.out = 40))
+  data_zeta$conditions <- rep(c("low", "medium", "high"), n)
+  data_zeta[data_zeta$conditions == "low", 1:2] = data_zeta[data_zeta$conditions == "low", 1:2] - pop.d
+  data_zeta[data_zeta$conditions == "high", 1:2] = data_zeta[data_zeta$conditions == "high", 1:2] + pop.d
+  tapply(data_zeta[,1], data_zeta$conditions, mean)
+  tapply(data_zeta[,2], data_zeta$conditions, mean)
   
   #Adding Sit C "gender" variable for each observation
-  gender <- rbinom(n = 40, size = 1, p = 0.5)
+  gender <- rbinom(n = N, size = 1, p = 0.5)
   gender <- as.factor(
     ifelse(gender == 1, "Female", "Male"))
   data_zeta <- data_zeta %>% mutate(gender = gender)
@@ -242,6 +257,9 @@ while (zeta <= k_sig) {
   DV2model_pvalue <- coef(summary(OLS_modelDV2))["lm_coding", "Pr(>|t|)"]
   
   pvalues_zeta <- c(pvalues_zeta, DV1model_pvalue, DV2model_pvalue)
+  
+  all_pvals <- c(pvalues_zeta, int_pvalueszeta)
+  round(all_pvals, 3)
   
   #Minimum p-values
   min_pvaluezeta <- min(pvalues_zeta)
@@ -323,7 +341,32 @@ while (zeta <= k_sig) {
     
     extra_pvalszeta <- c(extra_pvalszeta, DV1model_pvalue, DV2model_pvalue)
     
-    #Minimum p-values
+    round(extra_pvalszeta, 3)
+    round(extraInt_pvalzeta, 3)
+    
+    all_pvals <- c(extra_pvalszeta, extraInt_pvalzeta)
+    round(all_pvals, 3)
+    
+    print(sim.i)
+  }
+  res.sim = rbind(res.sim, cbind(sim.i, all_pvals))
+  zvals = abs(qnorm(1-(res.sim[,2])/2))
+  fitted_model <- zcurve(zvals, control = list(a = 1.96), bootstrap = 0)
+  plot(fitted_model, annotation = TRUE)
+  summary(zvals)}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    "#Minimum p-values
     ExMin_pvaluezeta <- min(extra_pvalszeta)
     ExMInt_pvaluezeta <- min(extraInt_pvalzeta)
     
@@ -345,10 +388,10 @@ zscores_zeta
 fit_zeta <- zcurve(zscores_zeta, control = list(parallel = TRUE))
 
 zeta_plot <- plot(fit_zeta, CI = TRUE, annotation = TRUE,
-                  main = "Scenario Zeta")
+                  main = "Scenario Zeta")"
 
 
-
+"if (i in 10)"
 
 
 

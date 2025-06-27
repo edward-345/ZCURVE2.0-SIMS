@@ -92,6 +92,8 @@ beta_plot <- plot(fit_beta, CI = TRUE, annotation = TRUE,
 zscores_gamma <- numeric(k_sig)
 gamma <- 1
 
+pop.d <- 0.2 #small effect size
+
 while (gamma <= k_sig) {
   groups <- sample(
     rep(c("control", "experimental"), each = 20))
@@ -101,6 +103,7 @@ while (gamma <= k_sig) {
   gender <- as.factor(
     ifelse(gender == 1, "female", "male"))
   data_gamma <- data.frame(dv, gender, groups)
+  dv[group == "experimental"] =  dv[group == "experimental"] + pop.d
   
   #Results for Situation C were obtained by conducting a t-test...
   ttest_result <- t.test(dv ~ groups, data = data_gamma, var.equal = TRUE)
