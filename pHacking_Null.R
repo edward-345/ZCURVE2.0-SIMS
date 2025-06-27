@@ -10,33 +10,33 @@ set.seed(666)
 k_sims <- 15000
 #----------------------------------------------
 #General case of Z-Curve under null hypothesis
-z_scores <- numeric(k_sims)
-j <- 1
-
-#Baseline is a two-condition design with 20 observations per cell
-#Each of the 15,000 observations independently drawn from a normal distribution
-for (i in 1:k_sims) {
-  #Standard normal distribution N(0,1) since false positive occurs under 
-  #the null hypothesis
-  control_group <- rnorm(n = 20, mean = 0, sd = 1)
-  exp_group <- rnorm(n = 20, mean = 0, sd = 1)
+#Baseline is a two-condition design with 20 observations per cell (n = 20)
+simulation <- function(k_sims, n) {
+  z_scores <- numeric(k_sims)
+  j <- 1
   
-  result <- t.test(control_group, exp_group, var.equal = TRUE)
-  p_value <- result$p.value
-  z_value <- pval_converter(p_value)
-  
-  if (abs(z_value) >= qnorm(0.975)) {
-    z_scores[j] <- z_value
-    j <- j + 1
+  #Each of the 15,000 observations independently drawn from normal distribution
+  for (i in 1:k_sims) {
+    #Standard normal distribution N(0,1) since false positive occurs under 
+    #the null hypothesis
+    control_group <- rnorm(n, mean = 0, sd = 1)
+    exp_group <- rnorm(n, mean = 0, sd = 1)
+    
+    result <- t.test(control_group, exp_group, var.equal = TRUE)
+    p_value <- result$p.value
+    z_value <- pval_converter(p_value)
+    
+    if (abs(z_value) >= qnorm(0.975)) {
+      z_scores[j] <- z_value
+      j <- j + 1
+    }
   }
+  
+  z_scores <- z_scores[1:(j - 1)]
+  fit <- zcurve(z_scores, control = list(parallel = TRUE))
+  return(
+    plot(fit, CI = TRUE, annotation = TRUE, main = "Simulation under Null"))
 }
-
-z_scores <- z_scores[1:(j - 1)]
-
-fit <- zcurve(z_scores, control = list(parallel = TRUE))
-
-sims_plot <- plot(
-  fit, CI = TRUE, annotation = TRUE, main = "Simulation under Null")
 
 #-------------------------------------------------------------------------------
 #SITUATION A: Two DVs for each observation
