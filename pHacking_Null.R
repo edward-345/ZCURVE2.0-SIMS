@@ -7,18 +7,15 @@ source("helper_functions.R")
 set.seed(666)
 
 #Number of simulations
-k_sims <- 15000
+#k_sims <- 15000
 #----------------------------------------------
 #General case of Z-Curve under null hypothesis
 #Baseline is a two-condition design with 20 observations per cell (n = 20)
 simulation <- function(k_sims, n) {
   z_scores <- numeric(k_sims)
   j <- 1
-  
-  #Each of the 15,000 observations independently drawn from normal distribution
   for (i in 1:k_sims) {
-    #Standard normal distribution N(0,1) since false positive occurs under 
-    #the null hypothesis
+    #Standard normal distribution N(0,1) since false positive occurs under null
     control_group <- rnorm(n, mean = 0, sd = 1)
     exp_group <- rnorm(n, mean = 0, sd = 1)
     
@@ -34,10 +31,11 @@ simulation <- function(k_sims, n) {
   
   z_scores <- z_scores[1:(j - 1)]
   fit <- zcurve(z_scores, control = list(parallel = TRUE))
-  return(
-    plot(fit, CI = TRUE, annotation = TRUE, main = "Simulation under Null"))
+  #sim_plot <- plot(fit, CI = TRUE, annotation = TRUE, main = "Simulation under Null")
+  return(summary(fit))
 }
 
+test <- simulation(500, 20)
 #-------------------------------------------------------------------------------
 #SITUATION A: Two DVs for each observation
 zscores_A <- numeric(k_sims)
