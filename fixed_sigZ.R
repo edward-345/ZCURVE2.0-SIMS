@@ -8,17 +8,17 @@ set.seed(666)
 
 #----------------------------------------------
 #SITUATION ALPHA: Two DVs for each observation
-alpha_sim <- function(k_sig, n) {
+alpha_sim <- function(k_sig, n, r) {
   zscores_alpha <- numeric(k_sig)
   alpha <- 1
   
   while (alpha <= k_sig) {
     #Generating control and exp group from N(0,1) with 2 DVs correlated by r=0.5 
     control_alpha <- rnorm_multi(
-      n, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+      n, vars = 2, mu = c(0,0),sd = c(1,1), r,
       varnames = c("Control1","Control2"))
     exp_alpha <- rnorm_multi(
-      n, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
+      n, vars = 2, mu = c(0,0), sd = c(1,1), r,
       varnames = c("Dependent1","Dependent2"))
     
     #Helper function conducts 3 t-tests, one on each of two dependent variables 
@@ -40,8 +40,8 @@ alpha_sim <- function(k_sig, n) {
   zscores_alpha
   
   fit_alpha <- zcurve(zscores_alpha, control = list(parallel = TRUE))
-  alpha_plot <- plot(
-    fit_alpha, CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
+  plot(fit_alpha, CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
+  alpha_plot <- recordPlot()
   
   alpha_list <- list(fit_alpha = fit_alpha,
                      alpha_plot = alpha_plot)
@@ -49,50 +49,59 @@ alpha_sim <- function(k_sig, n) {
   return(alpha_list)
 }
 
-alpha_500 <- alpha_sim(500, 20)
+alpha_500 <- alpha_sim(500, 20, 0.5)
 summary(alpha_500 $fit_alpha)
 #-------------------------------------------------------------------------------
 #SITUATION BETA: Optional Stopping
-zscores_beta <- numeric(k_sig)
-beta <- 1 
-
-while (beta <= k_sig) {
-  #Conducting one t-test after collecting 20 observations per cell 
-  control_beta <- rnorm(n = 20, mean = 0, sd = 1)
-  exp_beta <- rnorm(n = 20, mean = 0, sd = 1)
-  result_beta <- t.test(control_beta, exp_beta, var.equal = TRUE)
-  pvalue_beta <- result_beta$p.value
+beta_sim <- function(k_sig, n, extra_n) {
+  zscores_beta <- numeric(k_sig)
+  beta <- 1 
   
-  if (pvalue_beta <= 0.05) {
-    #If the result is significant, the researcher stops collecting data and 
-    #reports the result
-    zvalue_beta <- pval_converter(pvalue_beta)
-    zscores_beta[beta] <- zvalue_beta
-    beta <- beta + 1
-  } else {
-    #If the result is non significant, the researcher collects 10 additional 
-    #observations per condition
-    extracontrol_beta <- rnorm(n = 10, mean = 0, sd = 1)
-    extraexp_beta <- rnorm(n = 10, mean = 0, sd = 1)
-    extraresult_beta <- t.test(c(control_beta, extracontrol_beta),
-                            c(exp_beta, extraexp_beta), var.equal = TRUE)
-    extrapvalue_beta <- extraresult_beta$p.value
+  while (beta <= k_sig) {
+    #Conducting one t-test after collecting 20 observations per cell 
+    control_beta <- rnorm(n, mean = 0, sd = 1)
+    exp_beta <- rnorm(n, mean = 0, sd = 1)
+    result_beta <- t.test(control_beta, exp_beta, var.equal = TRUE)
+    pvalue_beta <- result_beta$p.value
     
-    if (extrapvalue_beta <= 0.05) {
-      #then again tests for significance
-      extrazvalue_beta <- pval_converter(extrapvalue_beta)
-      zscores_beta[beta] <- extrazvalue_beta
-      beta <- beta+1
+    if (pvalue_beta <= 0.05) {
+      #If the result is significant, the researcher stops collecting data and 
+      #reports the result
+      zvalue_beta <- pval_converter(pvalue_beta)
+      zscores_beta[beta] <- zvalue_beta
+      beta <- beta + 1
+    } else {
+      #If the result is non significant, the researcher collects 10 additional 
+      #observations per condition
+      extracontrol_beta <- rnorm(extra_n, mean = 0, sd = 1)
+      extraexp_beta <- rnorm(extra_n, mean = 0, sd = 1)
+      extraresult_beta <- t.test(c(control_beta, extracontrol_beta),
+                                 c(exp_beta, extraexp_beta), var.equal = TRUE)
+      extrapvalue_beta <- extraresult_beta$p.value
+      
+      if (extrapvalue_beta <= 0.05) {
+        #then again tests for significance
+        extrazvalue_beta <- pval_converter(extrapvalue_beta)
+        zscores_beta[beta] <- extrazvalue_beta
+        beta <- beta+1
+      }
     }
   }
+  
+  zscores_beta
+  
+  fit_beta <- zcurve(zscores_beta, control = list(parallel = TRUE))
+  plot(fit_beta, CI = TRUE, annotation = TRUE, main = "Scenario Beta")
+  beta_plot <- recordPlot()
+  
+  beta_list <- list(fit_beta = fit_beta,
+                     beta_plot = beta_plot)
+  
+  return(beta_list)
 }
 
-zscores_beta
-
-fit_beta <- zcurve(zscores_beta, control = list(parallel = TRUE))
-
-beta_plot <- plot(fit_beta, CI = TRUE, annotation = TRUE,
-                  main = "Scenario Beta")
+beta_500 <- beta_sim(500, 20, 10)
+summary(beta_500$fit_beta)
 #-------------------------------------------------------------------------------
 #Situation Gamma: Main effect or interaction term ANCOVAs
 zscores_gamma <- numeric(k_sig)
