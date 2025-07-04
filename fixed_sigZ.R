@@ -174,55 +174,61 @@ gamma_500 <- gamma_sim(500, 20)
 summary(gamma_500$fit_gamma)
 #-------------------------------------------------------------------------------
 #Situation Delta: Ordinal test conditions
-zscores_delta <- numeric(k_sig)
-delta <- 1
-
-while (delta <= k_sig) {
-  #Running three conditions (e.g., low, medium, high) 
-  conditions <- sample(
-    rep(c("low", "medium", "high"), length.out = 40))
-  dv <- rnorm(n = 40, mean = 0, sd = 1)
-  data_delta <- data.frame(conditions, dv)
+delta_sim <- function(k_sig, n) {
+  zscores_delta <- numeric(k_sig)
+  delta <- 1
   
-  #Conducting t tests for each of the three possible pairings of conditions 
-  LowMed_pvalue <- t.test(
-    dv ~ conditions,
-    data = subset(data_delta, conditions %in% c("low","medium")))$p.value
-  LowHigh_pvalue <-t.test(
-    dv ~ conditions,
-    data = subset(data_delta, conditions %in% c("low","high")))$p.value
-  MedHigh_pvalue <- t.test(
-    dv ~ conditions,
-    data = subset(data_delta, conditions %in% c("medium","high")))$p.value
-  
-  #ordinary least squares regression for the linear trend of all three 
-  #conditions (coding: low = –1, medium = 0, high = 1)
-  lm_coding <- ifelse(data_delta$conditions == "low", -1,
-                      ifelse(data_delta$conditions == "medium", 0, 1))
-  model_delta <- lm(dv~lm_coding)
-  model_pvalue <- coef(summary(model_delta))["lm_coding", "Pr(>|t|)"]
-  
-  pvalues_delta <- c(LowMed_pvalue, LowHigh_pvalue, MedHigh_pvalue,
-                 model_pvalue)
-  minpval_delta <- min(pvalues_delta)
-  
-  #Report if the lowest of all three t-tests and OLS regression is significant
-  if (minpval_delta <= 0.05) {
-    zvalue_delta <- pval_converter(minpval_delta)
-    zscores_delta[delta] <- zvalue_delta
-    delta <- delta + 1
+  while (delta <= k_sig) {
+    #Running three conditions (e.g., low, medium, high) 
+    conditions <- sample(
+      rep(c("low", "medium", "high"), length.out = n*2))
+    dv <- rnorm(n*2, mean = 0, sd = 1)
+    data_delta <- data.frame(conditions, dv)
+    
+    #Conducting t tests for each of the three possible pairings of conditions 
+    LowMed_pvalue <- t.test(
+      dv ~ conditions,
+      data = subset(data_delta, conditions %in% c("low","medium")))$p.value
+    LowHigh_pvalue <-t.test(
+      dv ~ conditions,
+      data = subset(data_delta, conditions %in% c("low","high")))$p.value
+    MedHigh_pvalue <- t.test(
+      dv ~ conditions,
+      data = subset(data_delta, conditions %in% c("medium","high")))$p.value
+    
+    #ordinary least squares regression for the linear trend of all three 
+    #conditions (coding: low = –1, medium = 0, high = 1)
+    lm_coding <- ifelse(data_delta$conditions == "low", -1,
+                        ifelse(data_delta$conditions == "medium", 0, 1))
+    model_delta <- lm(dv~lm_coding)
+    model_pvalue <- coef(summary(model_delta))["lm_coding", "Pr(>|t|)"]
+    
+    pvalues_delta <- c(LowMed_pvalue, LowHigh_pvalue, MedHigh_pvalue,
+                       model_pvalue)
+    minpval_delta <- min(pvalues_delta)
+    
+    #Report if the lowest of all three t-tests and OLS regression is significant
+    if (minpval_delta <= 0.05) {
+      zvalue_delta <- pval_converter(minpval_delta)
+      zscores_delta[delta] <- zvalue_delta
+      delta <- delta + 1
+    }
   }
+  
+  zscores_delta
+  
+  fit_delta <- zcurve(zscores_delta, control = list(parallel = TRUE))
+  plot(fit_delta, CI = TRUE, annotation = TRUE, main = "Scenario Delta")
+  delta_plot <- recordPlot()
+  
+  delta_list <- list(fit_delta = fit_delta,
+                     delta_plot = delta_plot)
+  
+  return(delta_list)
 }
 
-zscores_delta
-
-fit_delta <- zcurve(zscores_delta, control = list(parallel = TRUE))
-
-delta_plot <- plot(fit_delta, CI = TRUE, annotation = TRUE,
-                   main = "Scenario Delta")
-
-
-
+delta_500 <- delta_sim(500, 20)
+summary(delta_500$fit_delta)
 
 
 
