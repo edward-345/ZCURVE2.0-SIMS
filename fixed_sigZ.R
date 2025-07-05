@@ -8,7 +8,7 @@ set.seed(666)
 
 #----------------------------------------------
 #SITUATION ALPHA: Two DVs for each observation
-alpha_sim <- function(k_sig, n, r, 
+alpha_sim <- function(k_sig, n = 20, r = 0.5, 
                       control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
   if (!is.numeric(exp_mu) || length(exp_mu) != 2 ||
       !is.numeric(control_mu) || length(control_mu) != 2 ||
@@ -43,8 +43,6 @@ alpha_sim <- function(k_sig, n, r,
     }
   }
   
-  zscores_alpha
-  
   fit_alpha <- zcurve(zscores_alpha, control = list(parallel = TRUE))
   plot(fit_alpha, CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
   alpha_plot <- recordPlot()
@@ -63,14 +61,15 @@ alpha_alt <- alpha_sim(500, 20, 0.5,
 summary(alpha_alt$fit_alpha)
 #-------------------------------------------------------------------------------
 #SITUATION BETA: Optional Stopping
-beta_sim <- function(k_sig, n, extra_n) {
+beta_sim <- function(k_sig, n = 20, extra_n = 10,
+                     control_mu = 0, exp_mu = 0) {
   zscores_beta <- numeric(k_sig)
   beta <- 1 
   
   while (beta <= k_sig) {
     #Conducting one t-test after collecting 20 observations per cell 
-    control_beta <- rnorm(n, mean = 0, sd = 1)
-    exp_beta <- rnorm(n, mean = 0, sd = 1)
+    control_beta <- rnorm(n, control_mu, sd = 1)
+    exp_beta <- rnorm(n, exp_mu, sd = 1)
     result_beta <- t.test(control_beta, exp_beta, var.equal = TRUE)
     pvalue_beta <- result_beta$p.value
     
@@ -83,8 +82,8 @@ beta_sim <- function(k_sig, n, extra_n) {
     } else {
       #If the result is non significant, the researcher collects 10 additional 
       #observations per condition
-      extracontrol_beta <- rnorm(extra_n, mean = 0, sd = 1)
-      extraexp_beta <- rnorm(extra_n, mean = 0, sd = 1)
+      extracontrol_beta <- rnorm(extra_n, control_mu, sd = 1)
+      extraexp_beta <- rnorm(extra_n, exp_mu, sd = 1)
       extraresult_beta <- t.test(c(control_beta, extracontrol_beta),
                                  c(exp_beta, extraexp_beta), var.equal = TRUE)
       extrapvalue_beta <- extraresult_beta$p.value
@@ -98,8 +97,6 @@ beta_sim <- function(k_sig, n, extra_n) {
     }
   }
   
-  zscores_beta
-  
   fit_beta <- zcurve(zscores_beta, control = list(parallel = TRUE))
   plot(fit_beta, CI = TRUE, annotation = TRUE, main = "Scenario Beta")
   beta_plot <- recordPlot()
@@ -110,8 +107,14 @@ beta_sim <- function(k_sig, n, extra_n) {
   return(beta_list)
 }
 
-beta_500 <- beta_sim(500, 20, 10)
+beta_500 <- beta_sim(500)
 summary(beta_500$fit_beta)
+
+beta_alt <- beta_sim(500, exp_mu = 0.2)
+summary(beta_alt$fit_beta)
+
+beta_alt_strong <- beta_sim(500, exp_mu = 0.8)
+summary(beta_alt$fit_beta)
 #-------------------------------------------------------------------------------
 #Situation Gamma: Main effect or interaction term ANCOVAs
 gamma_sim <- function(k_sig, n) {
