@@ -8,17 +8,23 @@ set.seed(666)
 
 #----------------------------------------------
 #SITUATION ALPHA: Two DVs for each observation
-alpha_sim <- function(k_sig, n, r) {
+alpha_sim <- function(k_sig, n, r, 
+                      control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  if (!is.numeric(exp_mu) || length(exp_mu) != 2 ||
+      !is.numeric(control_mu) || length(control_mu) != 2 ||
+      !is.numeric(sd) || length(sd) != 2) 
+    {stop("`mu and sd` must be a numeric vector of length 2, e.g. c(0, 0).")}
+  
   zscores_alpha <- numeric(k_sig)
   alpha <- 1
   
   while (alpha <= k_sig) {
     #Generating control and exp group from N(0,1) with 2 DVs correlated by r=0.5 
     control_alpha <- rnorm_multi(
-      n, vars = 2, mu = c(0,0),sd = c(1,1), r,
+      n, vars = 2, control_mu, sd, r,
       varnames = c("Control1","Control2"))
     exp_alpha <- rnorm_multi(
-      n, vars = 2, mu = c(0,0), sd = c(1,1), r,
+      n, vars = 2, exp_mu, sd, r,
       varnames = c("Dependent1","Dependent2"))
     
     #Helper function conducts 3 t-tests, one on each of two dependent variables 
@@ -51,6 +57,10 @@ alpha_sim <- function(k_sig, n, r) {
 
 alpha_500 <- alpha_sim(500, 20, 0.5)
 summary(alpha_500$fit_alpha)
+
+alpha_alt <- alpha_sim(500, 20, 0.5, 
+                       control_mu = c(0,0), exp_mu = c(0,2), sd = c(1,1))
+summary(alpha_alt$fit_alpha)
 #-------------------------------------------------------------------------------
 #SITUATION BETA: Optional Stopping
 beta_sim <- function(k_sig, n, extra_n) {
