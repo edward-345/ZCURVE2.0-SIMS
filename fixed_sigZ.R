@@ -53,11 +53,13 @@ alpha_sim <- function(k_sig, n = 20, r = 0.5,
   return(alpha_list)
 }
 
-alpha_500 <- alpha_sim(500, 20, 0.5)
+alpha_500 <- alpha_sim(500)
 summary(alpha_500$fit_alpha)
 
-alpha_alt <- alpha_sim(500, 20, 0.5, 
-                       control_mu = c(0,0), exp_mu = c(0,2), sd = c(1,1))
+alpha_alt <- alpha_sim(500, exp_mu = c(0.2,0.2))
+summary(alpha_alt$fit_alpha)
+
+alpha_alt_strong <- alpha_sim(500, exp_mu = c(0.8,0.8))
 summary(alpha_alt$fit_alpha)
 #-------------------------------------------------------------------------------
 #SITUATION BETA: Optional Stopping
@@ -185,17 +187,20 @@ gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0) {
   return(gamma_list)
 }
 
+#Null hypothesis
 gamma_500 <- gamma_sim(500)
 summary(gamma_500$fit_gamma)
 
+#Experimental group from N(0.2, 0)
 gamma_alt <- gamma_sim(500, exp_mu = 0.2)
 summary(gamma_alt$fit_gamma)
 
+#Experimental group from N(0.8, 0)
 gamma_alt_strong <- gamma_sim(500, exp_mu = 0.8)
 summary(gamma_alt_strong$fit_gamma)
 #-------------------------------------------------------------------------------
 #Situation Delta: Ordinal test conditions
-delta_sim <- function(k_sig, n) {
+delta_sim <- function(k_sig, n = 20, mu = 0, sd = 1) {
   zscores_delta <- numeric(k_sig)
   delta <- 1
   
@@ -203,7 +208,9 @@ delta_sim <- function(k_sig, n) {
     #Running three conditions (e.g., low, medium, high) 
     conditions <- sample(
       rep(c("low", "medium", "high"), length.out = n*2))
-    dv <- rnorm(n*2, mean = 0, sd = 1)
+    dv <- rnorm(n*2,
+                mean = ifelse(conditions == "low", -mu,
+                              ifelse(conditions == "medium", 0, mu)), sd)
     data_delta <- data.frame(conditions, dv)
     
     #Conducting t tests for each of the three possible pairings of conditions 
@@ -236,8 +243,6 @@ delta_sim <- function(k_sig, n) {
     }
   }
   
-  zscores_delta
-  
   fit_delta <- zcurve(zscores_delta, control = list(parallel = TRUE))
   plot(fit_delta, CI = TRUE, annotation = TRUE, main = "Scenario Delta")
   delta_plot <- recordPlot()
@@ -248,12 +253,14 @@ delta_sim <- function(k_sig, n) {
   return(delta_list)
 }
 
-delta_500 <- delta_sim(500, 20)
+delta_500 <- delta_sim(500)
 summary(delta_500$fit_delta)
 
+delta_alt <- delta_sim(500, mu = 0.2)
+summary(delta_alt$fit_delta)
 
-
-
+delta_alt_strong <- delta_sim(500, mu = 0.8)
+summary(delta_alt_strong$fit_delta)
 
 
 
