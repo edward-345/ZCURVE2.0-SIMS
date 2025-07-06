@@ -74,119 +74,138 @@ chi_alt_strong <- chi_sim(500, exp_mu = c(0.8, 0.8))
 summary(chi_alt_strong$fit_chi)
 #-------------------------------------------------------------------------------
 #Situation A,B,C combined, fixed number of significant z-scores
-zscores_psi <- numeric(k_sig)
-psi <- 1
-
-while (psi <= k_sig) {
-  control_psi <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
-    varnames = c("DV1","DV2"))
-  exp_psi <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
-    varnames = c("DV1","DV2"))
+psi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
+                    control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  zscores_psi <- numeric(k_sig)
+  psi <- 1
   
-  control_psi$group <- "Control"
-  exp_psi$group <- "Experimental"
-  
-  data_psi <- rbind(control_psi, exp_psi)
-  
-  gender <- rbinom(n = 40, size = 1, p = 0.5)
-  gender <- as.factor(
-    ifelse(gender == 1, "Female", "Male"))
-  data_psi <- data_psi %>% mutate(gender = gender)
-  
-  pvalues_psi <- sitA_ttests(control_psi$DV1, control_psi$DV2,
-                           exp_psi$DV1, exp_psi$DV2)
-  
-  dv1_model <- lm(DV1 ~ group + gender, data = data_psi)
-  dv1_fitP <- summary(dv1_model)$coefficients[
-    "groupExperimental","Pr(>|t|)"]
-  pvalues_psi <- c(pvalues_psi, dv1_fitP)
-  
-  dv2_model <- lm(DV2 ~ group + gender, data = data_psi)
-  dv2_fitP <- summary(dv2_model)$coefficients[
-    "groupExperimental","Pr(>|t|)"]
-  pvalues_psi <- c(pvalues_psi, dv2_fitP)
-  
-  dv1_intmodel <- lm(DV1 ~ group*gender, data = data_psi)
-  dv1_intfitP <- summary(dv1_intmodel)$coefficients[
-    "groupExperimental:genderMale","Pr(>|t|)"]
-  
-  dv2_intmodel <- lm(DV2 ~ group*gender, data = data_psi)
-  dv2_intfitP <- summary(dv2_intmodel)$coefficients[
-    "groupExperimental:genderMale","Pr(>|t|)"]
-  int_pvaluespsi <- c(dv1_intfitP, dv2_intfitP)
-  
-  minpval_psi <- min(pvalues_psi)
-  mInt.pval_psi <- min(int_pvaluespsi) 
-  
-  if (mInt.pval_psi <= 0.05) {
-    zvalue_psi <- pval_converter(mInt.pval_psi)
-    zscores_psi[psi] <- zvalue_psi
-    psi <- psi + 1
-  } else if (minpval_psi <= 0.05){
-    zvalue_psi <- pval_converter(minpval_psi)
-    zscores_psi[psi] <- zvalue_psi
-    psi <- psi + 1
-  } else {
-    extracontrol_psi <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+  while (psi <= k_sig) {
+    control_psi <- rnorm_multi(
+      n, vars = 2, control_mu, sd, r,
       varnames = c("DV1","DV2"))
-    extraexp_psi <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+    exp_psi <- rnorm_multi(
+      n, vars = 2, exp_mu, sd, r,
       varnames = c("DV1","DV2"))
     
-    extracontrol_psi$group <- "Control"
-    extraexp_psi$group <- "Experimental"
+    control_psi$group <- "Control"
+    exp_psi$group <- "Experimental"
     
-    extra_datapsi <- rbind(extracontrol_psi, extraexp_psi)
-    gender <- rbinom(n = 20, size = 1, p = 0.5)
+    data_psi <- rbind(control_psi, exp_psi)
+    
+    gender <- rbinom(n*2, size = 1, p = 0.5)
     gender <- as.factor(
       ifelse(gender == 1, "Female", "Male"))
-    extra_datapsi <- extra_datapsi %>% mutate(gender = gender)
+    data_psi <- data_psi %>% mutate(gender = gender)
     
-    combined_datapsi <- rbind(data_psi, extra_datapsi)
+    pvalues_psi <- sitA_ttests(control_psi$DV1, control_psi$DV2,
+                               exp_psi$DV1, exp_psi$DV2)
     
-    extra_pvalpsi <- sitA_ttests(extracontrol_psi$DV1, extracontrol_psi$DV2,
-                               extraexp_psi$DV1, extraexp_psi$DV2)
-    
-    Exdv1_model <- lm(DV1 ~ group + gender, data = combined_datapsi)
-    Exdv1_fitP <- summary(Exdv1_model)$coefficients[
+    dv1_model <- lm(DV1 ~ group + gender, data = data_psi)
+    dv1_fitP <- summary(dv1_model)$coefficients[
       "groupExperimental","Pr(>|t|)"]
-    extra_pvalpsi <- c(extra_pvalpsi, Exdv1_fitP)
-    Exdv2_model <- lm(DV2 ~ group + gender, data = combined_datapsi)
-    Exdv2_fitP <- summary(Exdv2_model)$coefficients[
+    pvalues_psi <- c(pvalues_psi, dv1_fitP)
+    
+    dv2_model <- lm(DV2 ~ group + gender, data = data_psi)
+    dv2_fitP <- summary(dv2_model)$coefficients[
       "groupExperimental","Pr(>|t|)"]
-    extra_pvalpsi <- c(extra_pvalpsi, Exdv2_fitP)
+    pvalues_psi <- c(pvalues_psi, dv2_fitP)
     
-    Exdv1_intmodel <- lm(DV1 ~ group*gender, data = combined_datapsi)
-    Exdv1_intfitP <- summary(Exdv1_intmodel)$coefficients[
+    dv1_intmodel <- lm(DV1 ~ group*gender, data = data_psi)
+    dv1_intfitP <- summary(dv1_intmodel)$coefficients[
       "groupExperimental:genderMale","Pr(>|t|)"]
-    Exdv2_intmodel <- lm(DV2 ~ group*gender, data = combined_datapsi)
-    Exdv2_intfitP <- summary(Exdv2_intmodel)$coefficients[
+    
+    dv2_intmodel <- lm(DV2 ~ group*gender, data = data_psi)
+    dv2_intfitP <- summary(dv2_intmodel)$coefficients[
       "groupExperimental:genderMale","Pr(>|t|)"]
-    Extraint_pvaLpsi <- c(Exdv1_intfitP, Exdv2_intfitP)
+    int_pvaluespsi <- c(dv1_intfitP, dv2_intfitP)
     
-    Exmin_pvalpsi <- min(extra_pvalpsi)
-    ExmInt_pvalpsi <- min(Extraint_pvaLpsi)
+    minpval_psi <- min(pvalues_psi)
+    mInt.pval_psi <- min(int_pvaluespsi) 
     
-    if (ExmInt_pvalpsi <= 0.05) {
-      extrazvalue_psi <- pval_converter(ExmInt_pvalpsi)
-      zscores_psi[psi] <- extrazvalue_psi
-      psi <- psi+1
-    } else if (Exmin_pvalpsi <= 0.05) {
-      extrazvalue_psi <- pval_converter(Exmin_pvalpsi)
-      zscores_psi[psi] <- extrazvalue_psi
-      psi <- psi+1
-    }
+    if (mInt.pval_psi <= 0.05) {
+      zvalue_psi <- pval_converter(mInt.pval_psi)
+      zscores_psi[psi] <- zvalue_psi
+      psi <- psi + 1
+    } else if (minpval_psi <= 0.05){
+      zvalue_psi <- pval_converter(minpval_psi)
+      zscores_psi[psi] <- zvalue_psi
+      psi <- psi + 1
+    } else {
+      extracontrol_psi <- rnorm_multi(
+        extra_n, vars = 2, control_mu, sd, r,
+        varnames = c("DV1","DV2"))
+      extraexp_psi <- rnorm_multi(
+        extra_n, vars = 2, exp_mu, sd, r,
+        varnames = c("DV1","DV2"))
+      
+      extracontrol_psi$group <- "Control"
+      extraexp_psi$group <- "Experimental"
+      
+      extra_datapsi <- rbind(extracontrol_psi, extraexp_psi)
+      gender <- rbinom(n = extra_n*2, size = 1, p = 0.5)
+      gender <- as.factor(
+        ifelse(gender == 1, "Female", "Male"))
+      extra_datapsi <- extra_datapsi %>% mutate(gender = gender)
+      
+      combined_datapsi <- rbind(data_psi, extra_datapsi)
+      
+      extra_pvalpsi <- sitA_ttests(
+        combined_datapsi$DV1[combined_datapsi$group=="Control"],
+        combined_datapsi$DV2[combined_datapsi$group=="Control"],
+        combined_datapsi$DV1[combined_datapsi$group=="Experimental"],
+        combined_datapsi$DV2[combined_datapsi$group=="Experimental"]
+      )
+      
+      Exdv1_model <- lm(DV1 ~ group + gender, data = combined_datapsi)
+      Exdv1_fitP <- summary(Exdv1_model)$coefficients[
+        "groupExperimental","Pr(>|t|)"]
+      extra_pvalpsi <- c(extra_pvalpsi, Exdv1_fitP)
+      Exdv2_model <- lm(DV2 ~ group + gender, data = combined_datapsi)
+      Exdv2_fitP <- summary(Exdv2_model)$coefficients[
+        "groupExperimental","Pr(>|t|)"]
+      extra_pvalpsi <- c(extra_pvalpsi, Exdv2_fitP)
+      
+      Exdv1_intmodel <- lm(DV1 ~ group*gender, data = combined_datapsi)
+      Exdv1_intfitP <- summary(Exdv1_intmodel)$coefficients[
+        "groupExperimental:genderMale","Pr(>|t|)"]
+      Exdv2_intmodel <- lm(DV2 ~ group*gender, data = combined_datapsi)
+      Exdv2_intfitP <- summary(Exdv2_intmodel)$coefficients[
+        "groupExperimental:genderMale","Pr(>|t|)"]
+      Extraint_pvaLpsi <- c(Exdv1_intfitP, Exdv2_intfitP)
+      
+      Exmin_pvalpsi <- min(extra_pvalpsi)
+      ExmInt_pvalpsi <- min(Extraint_pvaLpsi)
+      
+      if (ExmInt_pvalpsi <= 0.05) {
+        extrazvalue_psi <- pval_converter(ExmInt_pvalpsi)
+        zscores_psi[psi] <- extrazvalue_psi
+        psi <- psi+1
+      } else if (Exmin_pvalpsi <= 0.05) {
+        extrazvalue_psi <- pval_converter(Exmin_pvalpsi)
+        zscores_psi[psi] <- extrazvalue_psi
+        psi <- psi+1
+      }
+      
+    }}
   
-}}
+  fit_psi <- zcurve(zscores_psi, control = list(parallel = TRUE))
+  plot(fit_psi, CI = TRUE, annotation = TRUE, main = "Scenario Psi")
+  psi_plot <- recordPlot()
+  
+  psi_list <- list(fit_psi = fit_psi,
+                    psi_plot = psi_plot)
+  
+  return(psi_list)
+}
 
-zscores_psi
+psi_500 <- psi_sim(500)
+summary(psi_500$fit_psi)
 
-fit_psi <- zcurve(zscores_psi, control = list(parallel = TRUE))
+psi_alt <- psi_sim(500, exp_mu = c(0.2, 0.2))
+summary(psi_alt$fit_psi)
 
-psi_plot <- plot(fit_psi, CI = TRUE, annotation = TRUE, main = "Scenario Psi")
+psi_alt_strong <- psi_sim(500, exp_mu = c(0.8, 0.8))
+summary(psi_alt_strong$fit_psi)
 
 #-------------------------------------------------------------------------------
 #Situation A,B,C,D combined, fixed number of significant z-scores
