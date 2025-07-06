@@ -107,24 +107,28 @@ beta_sim <- function(k_sig, n = 20, extra_n = 10,
   return(beta_list)
 }
 
+#500 studies under null hypothesis, both groups come from N(0,1)
 beta_500 <- beta_sim(500)
 summary(beta_500$fit_beta)
 
+#Weak effect size
 beta_alt <- beta_sim(500, exp_mu = 0.2)
 summary(beta_alt$fit_beta)
 
+#Strong effect size
 beta_alt_strong <- beta_sim(500, exp_mu = 0.8)
 summary(beta_alt$fit_beta)
 #-------------------------------------------------------------------------------
 #Situation Gamma: Main effect or interaction term ANCOVAs
-gamma_sim <- function(k_sig, n) {
+gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0) {
   zscores_gamma <- numeric(k_sig)
   gamma <- 1
   
   while (gamma <= k_sig) {
     groups <- sample(
       rep(c("control", "experimental"), each = n))
-    dv <- rnorm(n*2, mean = 0, sd = 1)
+    dv <- rnorm(length(groups),
+                mean = ifelse(groups=="control", control_mu, exp_mu), sd = 1)
     #Each observation was assigned a 50% probability of being female
     gender <- rbinom(n*2, size = 1, p = 0.5)
     gender <- as.factor(
@@ -171,8 +175,6 @@ gamma_sim <- function(k_sig, n) {
     }
   }
   
-  zscores_gamma
-  
   fit_gamma <- zcurve(zscores_gamma, control = list(parallel = TRUE))
   plot(fit_gamma, CI = TRUE, annotation = TRUE, main = "Scenario Gamma")
   gamma_plot <- recordPlot()
@@ -183,8 +185,14 @@ gamma_sim <- function(k_sig, n) {
   return(gamma_list)
 }
 
-gamma_500 <- gamma_sim(500, 20)
+gamma_500 <- gamma_sim(500)
 summary(gamma_500$fit_gamma)
+
+gamma_alt <- gamma_sim(500, exp_mu = 0.2)
+summary(gamma_alt$fit_gamma)
+
+gamma_alt_strong <- gamma_sim(500, exp_mu = 0.8)
+summary(gamma_alt_strong$fit_gamma)
 #-------------------------------------------------------------------------------
 #Situation Delta: Ordinal test conditions
 delta_sim <- function(k_sig, n) {
