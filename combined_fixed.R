@@ -6,60 +6,72 @@ library(ggplot2)
 source("helper_functions.R")
 set.seed(666)
 
-#Number of significant z-scores to be produced
-k_sig <- 1500
 #----------------------------------------------
 #Situation A,B combined, fixed number of significant z-scores
-zscores_chi <- numeric(k_sig)
-chi <- 1 
-
-while (chi <= k_sig) {
-  control_chi <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
-    varnames = c("Control1","Control2"))
-  exp_chi <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
-    varnames = c("Dependent1","Dependent2"))
+chi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,  
+                    control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  zscores_chi <- numeric(k_sig)
+  chi <- 1 
   
-  pvalues_chi <- sitA_ttests(control_chi$Control1, control_chi$Control2,
-                           exp_chi$Dependent1, exp_chi$Dependent2)
-  minpval_chi <- min(pvalues_chi)
-  
-  if (minpval_chi <= 0.05) {
-    zvalue_chi <- pval_converter(minpval_chi)
-    zscores_chi[chi] <- zvalue_chi
-    chi <- chi + 1
-  } else {
-    extracontrol_chi <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+  while (chi <= k_sig) {
+    control_chi <- rnorm_multi(
+      n, vars = 2, control_mu, sd, r,
       varnames = c("Control1","Control2"))
-    extraexp_chi <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+    exp_chi <- rnorm_multi(
+      n, vars = 2, exp_mu, sd, r,
       varnames = c("Dependent1","Dependent2"))
     
-    combined_Control <- rbind(control_chi, extracontrol_chi)
-    combined_Dep <- rbind(exp_chi, extraexp_chi)
+    pvalues_chi <- sitA_ttests(control_chi$Control1, control_chi$Control2,
+                               exp_chi$Dependent1, exp_chi$Dependent2)
+    minpval_chi <- min(pvalues_chi)
     
-    ExtraPvalues_chi <- sitA_ttests(combined_Control$Control1,
-                                  combined_Control$Control2,
-                                  combined_Dep$Dependent1,
-                                  combined_Dep$Dependent2)
-    min_ExtraPvalue <- min(ExtraPvalues_chi)
-    
-    if (min_ExtraPvalue <= 0.05) {
-      extrazvalue_chi <- pval_converter(min_ExtraPvalue)
-      zscores_chi[chi] <- extrazvalue_chi
-      chi <- chi+1
+    if (minpval_chi <= 0.05) {
+      zvalue_chi <- pval_converter(minpval_chi)
+      zscores_chi[chi] <- zvalue_chi
+      chi <- chi + 1
+    } else {
+      extracontrol_chi <- rnorm_multi(
+        extra_n, vars = 2, control_mu, sd, r,
+        varnames = c("Control1","Control2"))
+      extraexp_chi <- rnorm_multi(
+        extra_n, vars = 2, exp_mu, sd, r,
+        varnames = c("Dependent1","Dependent2"))
+      
+      combined_Control <- rbind(control_chi, extracontrol_chi)
+      combined_Dep <- rbind(exp_chi, extraexp_chi)
+      
+      ExtraPvalues_chi <- sitA_ttests(combined_Control$Control1,
+                                      combined_Control$Control2,
+                                      combined_Dep$Dependent1,
+                                      combined_Dep$Dependent2)
+      min_ExtraPvalue <- min(ExtraPvalues_chi)
+      
+      if (min_ExtraPvalue <= 0.05) {
+        extrazvalue_chi <- pval_converter(min_ExtraPvalue)
+        zscores_chi[chi] <- extrazvalue_chi
+        chi <- chi+1
+      }
     }
   }
+  
+  fit_chi <- zcurve(zscores_chi, control = list(parallel = TRUE))
+  plot(fit_chi, CI = TRUE, annotation = TRUE, main = "Scenario Chi")
+  chi_plot <- recordPlot()
+  
+  chi_list <- list(fit_chi = fit_chi,
+                    chi_plot = chi_plot)
+  
+  return(chi_list)
 }
 
-zscores_chi
+chi_500 <- chi_sim(500)
+summary(chi_500$fit_chi)
 
-fit_chi <- zcurve(zscores_chi, control = list(parallel = TRUE))
+chi_alt <- chi_sim(500, exp_mu = c(0.2, 0.2))
+summary(chi_alt$fit_chi)
 
-chi_plot <- plot(fit_chi, CI = TRUE, annotation = TRUE, main = "Scenario Chi")
-
+chi_alt_strong <- chi_sim(500, exp_mu = c(0.8, 0.8))
+summary(chi_alt_strong$fit_chi)
 #-------------------------------------------------------------------------------
 #Situation A,B,C combined, fixed number of significant z-scores
 zscores_psi <- numeric(k_sig)
