@@ -122,7 +122,7 @@ beta_alt_strong <- beta_sim(500, exp_mu = 0.8)
 summary(beta_alt$fit_beta)
 #-------------------------------------------------------------------------------
 #Situation Gamma: Main effect or interaction term ANCOVAs
-gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0) {
+gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   zscores_gamma <- numeric(k_sig)
   gamma <- 1
   
@@ -130,7 +130,7 @@ gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0) {
     groups <- sample(
       rep(c("control", "experimental"), each = n))
     dv <- rnorm(length(groups),
-                mean = ifelse(groups=="control", control_mu, exp_mu), sd = 1)
+                mean = ifelse(groups=="control", control_mu, exp_mu), sd)
     #Each observation was assigned a 50% probability of being female
     gender <- rbinom(n*2, size = 1, p = 0.5)
     gender <- as.factor(
