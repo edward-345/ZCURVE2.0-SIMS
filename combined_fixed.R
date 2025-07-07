@@ -382,11 +382,19 @@ zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
   plot(fit_zeta, CI = TRUE, annotation = TRUE, main = "Scenario Zeta")
   zeta_plot <- recordPlot()
   
-  zeta_list <- list(fit_zeta, zeta_plot)
+  zeta_list <- list(fit_zeta = fit_zeta, 
+                    zeta_plot = zeta_plot)
   return(zeta_list)
 }
 
+zeta_500 <- zeta_sim(500)
+summary(zeta_500$fit_zeta)
 
+zeta_alt <- zeta_sim(500, mu = 0.2)
+summary(zeta_alt$fit_zeta)
+
+zeta_alt_strong <- zeta_sim(500, mu = 0.8)
+summary(zeta_alt_strong$fit_zeta)
 
 
 
