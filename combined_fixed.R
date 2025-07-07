@@ -209,174 +209,183 @@ summary(psi_alt_strong$fit_psi)
 
 #-------------------------------------------------------------------------------
 #Situation A,B,C,D combined, fixed number of significant z-scores
-zscores_zeta <- numeric(k_sig)
-zeta <- 1
-
-while (zeta <= k_sig) {
-  #Generating data frame of Control group DV1, DV2 outcome values for Sit A
-  data_zeta <- rnorm_multi(
-    n = 40, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
-    varnames = c("DV1","DV2"))
+zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
+                     mu = 0, sd = c(1,1)) {
+  zscores_zeta <- numeric(k_sig)
+  zeta <- 1
   
-  #Column of Sit D "conditions" variables added
-  data_zeta$conditions <- sample(rep(c("low", "medium", "high"),
-                                     length.out = 40))
+  mu_conditions <- list(low = c(-mu, -mu),
+                        medium = c(0,0),
+                        high = c(mu, mu))
   
-  #Adding Sit C "gender" variable for each observation
-  gender <- rbinom(n = 40, size = 1, p = 0.5)
-  gender <- as.factor(
-    ifelse(gender == 1, "Female", "Male"))
-  data_zeta <- data_zeta %>% mutate(gender = gender)
-  
-  #T-tests for all 3 combinations of conditions (Sit D) for DV1 and DV2 (Sit A)
-  pvalues_zeta <- sitZ_ttests(data_zeta)
-  
-  #Gender main effect ANCOVA for DV1 (Sit C)
-  dv1_model <- lm(DV1 ~ conditions + gender, data = data_zeta)
-  dv1_fitP <- summary(dv1_model)$coefficients[
-    grep("^conditions", rownames(summary(dv1_model)$coefficients)),
-    "Pr(>|t|)"]
-  pvalues_zeta <- c(pvalues_zeta, dv1_fitP)
-  
-  #Gender main effect ANCOVA for DV2 (Sit C)
-  dv2_model <- lm(DV2 ~ conditions + gender, data = data_zeta)
-  dv2_fitP <- summary(dv2_model)$coefficients[
-    grep("^conditions", rownames(summary(dv2_model)$coefficients)),
-    "Pr(>|t|)"]
-  pvalues_zeta <- c(pvalues_zeta, dv2_fitP)
-  
-  #Gender*group interaction effect ANCOVA for DV1 (Sit C)
-  dv1_intmodel <- lm(DV1 ~ conditions*gender, data = data_zeta)
-  dv1_intfitP <- summary(
-    dv1_intmodel)$coefficients[grep("conditions.*:genderMale",
-                                    rownames(summary(
-                                      dv1_intmodel)$coefficients)), "Pr(>|t|)"]
-  
-  #Gender*group interaction effect ANCOVA for DV2 (Sit C)
-  dv2_intmodel <- lm(DV2 ~ conditions*gender, data = data_zeta)
-  dv2_intfitP <- summary(
-    dv2_intmodel)$coefficients[grep("conditions.*:genderMale",
-                                    rownames(summary(
-                                      dv2_intmodel)$coefficients)), "Pr(>|t|)"]
-  
-  #Interaction term ANCOVA model p-values
-  int_pvalueszeta <- c(dv1_intfitP, dv2_intfitP)
-  
-  #OLS regression for the linear trend of conditions for DV1 (Sit D)
-  lm_coding <- ifelse(data_zeta$conditions == "low", -1,
-                      ifelse(data_zeta$conditions == "medium", 0, 1))
-  
-  OLS_modelDV1 <- lm(DV1~lm_coding, data = data_zeta)
-  DV1model_pvalue <- coef(summary(OLS_modelDV1))["lm_coding", "Pr(>|t|)"]
-  
-  OLS_modelDV2 <- lm(DV2~lm_coding, data = data_zeta)
-  DV2model_pvalue <- coef(summary(OLS_modelDV2))["lm_coding", "Pr(>|t|)"]
-  
-  pvalues_zeta <- c(pvalues_zeta, DV1model_pvalue, DV2model_pvalue)
-  
-  #Minimum p-values
-  min_pvaluezeta <- min(pvalues_zeta)
-  mInt_pvaluezeta <- min(int_pvalueszeta)
-  
-  if (mInt_pvaluezeta <= 0.05) {
-    zvalue_zeta <- pval_converter(mInt_pvaluezeta)
-    zscores_zeta[zeta] <- zvalue_zeta
-    zeta <- zeta + 1
-  } else if (min_pvaluezeta <= 0.05){
-    #"if the effect of condition was significant in any of these analyses"
-    zvalue_zeta <- pval_converter(min_pvaluezeta)
-    zscores_zeta[zeta] <- zvalue_zeta
-    zeta <- zeta + 1
-  } else {
-    #Adding 10 observations per cell from Situation B if non significant
-    extradata_zeta <- rnorm_multi(
-      n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
-      varnames = c("DV1","DV2"))
-    
+  while (zeta <= k_sig) {
+    #Generating data frame of Control group DV1, DV2 outcome values for Sit A
+    conditions <- sample(rep(c("low", "medium", "high"), length.out = n*2))
     #Column of Sit D "conditions" variables added
-    extradata_zeta$conditions <- sample(
-      rep(c("low", "medium", "high"), length.out = 20))
+    dv_list <- lapply(conditions, zeta_mu_assign,
+                 mu_conditions = mu_conditions,
+                 sd = sd, r = r)
+    dv <- do.call(rbind, dv_list)
+    data_zeta <- data.frame(conditions, dv)
     
     #Adding Sit C "gender" variable for each observation
-    gender <- rbinom(n = 20, size = 1, p = 0.5)
+    gender <- rbinom(nrow(data_zeta), size = 1, p = 0.5)
     gender <- as.factor(
       ifelse(gender == 1, "Female", "Male"))
-    extradata_zeta <- extradata_zeta %>% mutate(gender = gender)
+    data_zeta <- data_zeta %>% mutate(gender = gender)
     
-    #Combining additional observations to current data set
-    combined_datazeta <- rbind(data_zeta, extradata_zeta)
-    
-    #T-tests for all 3 combos of conditions (Sit D) for DV1 and DV2 (Sit A)
-    extra_pvalszeta <- sitZ_ttests(combined_datazeta)
+    #T-tests for all 3 combinations of conditions (Sit D) for DV1 and DV2 (Sit A)
+    pvalues_zeta <- sitZ_ttests(data_zeta)
     
     #Gender main effect ANCOVA for DV1 (Sit C)
-    dv1_model <- lm(DV1 ~ conditions + gender, data = combined_datazeta)
+    dv1_model <- lm(DV1 ~ conditions + gender, data = data_zeta)
     dv1_fitP <- summary(dv1_model)$coefficients[
       grep("^conditions", rownames(summary(dv1_model)$coefficients)),
       "Pr(>|t|)"]
-    extra_pvalszeta <- c(extra_pvalszeta, dv1_fitP)
+    pvalues_zeta <- c(pvalues_zeta, dv1_fitP)
     
     #Gender main effect ANCOVA for DV2 (Sit C)
-    dv2_model <- lm(DV2 ~ conditions + gender, data = combined_datazeta)
+    dv2_model <- lm(DV2 ~ conditions + gender, data = data_zeta)
     dv2_fitP <- summary(dv2_model)$coefficients[
       grep("^conditions", rownames(summary(dv2_model)$coefficients)),
       "Pr(>|t|)"]
-    extra_pvalszeta <- c(extra_pvalszeta, dv2_fitP)
+    pvalues_zeta <- c(pvalues_zeta, dv2_fitP)
     
     #Gender*group interaction effect ANCOVA for DV1 (Sit C)
-    dv1_intmodel <- lm(DV1 ~ conditions*gender, data = combined_datazeta)
+    dv1_intmodel <- lm(DV1 ~ conditions*gender, data = data_zeta)
     dv1_intfitP <- summary(
       dv1_intmodel)$coefficients[grep("conditions.*:genderMale",
                                       rownames(summary(
-                                        dv1_intmodel)$coefficients)),
-                                 "Pr(>|t|)"]
+                                        dv1_intmodel)$coefficients)), "Pr(>|t|)"]
     
     #Gender*group interaction effect ANCOVA for DV2 (Sit C)
-    dv2_intmodel <- lm(DV2 ~ conditions*gender, data = combined_datazeta)
+    dv2_intmodel <- lm(DV2 ~ conditions*gender, data = data_zeta)
     dv2_intfitP <- summary(
       dv2_intmodel)$coefficients[grep("conditions.*:genderMale",
                                       rownames(summary(
-                                        dv2_intmodel)$coefficients)),
-                                 "Pr(>|t|)"]
+                                        dv2_intmodel)$coefficients)), "Pr(>|t|)"]
     
     #Interaction term ANCOVA model p-values
-    extraInt_pvalzeta <- c(dv1_intfitP, dv2_intfitP)
+    int_pvalueszeta <- c(dv1_intfitP, dv2_intfitP)
     
     #OLS regression for the linear trend of conditions for DV1 (Sit D)
-    lm_coding <- ifelse(combined_datazeta$conditions == "low", -1,
-                        ifelse(combined_datazeta$conditions == "medium", 0, 1))
+    lm_coding <- ifelse(data_zeta$conditions == "low", -1,
+                        ifelse(data_zeta$conditions == "medium", 0, 1))
     
-    OLS_modelDV1 <- lm(DV1~lm_coding, data = combined_datazeta)
+    OLS_modelDV1 <- lm(DV1~lm_coding, data = data_zeta)
     DV1model_pvalue <- coef(summary(OLS_modelDV1))["lm_coding", "Pr(>|t|)"]
     
-    OLS_modelDV2 <- lm(DV2~lm_coding, data = combined_datazeta)
+    OLS_modelDV2 <- lm(DV2~lm_coding, data = data_zeta)
     DV2model_pvalue <- coef(summary(OLS_modelDV2))["lm_coding", "Pr(>|t|)"]
     
-    extra_pvalszeta <- c(extra_pvalszeta, DV1model_pvalue, DV2model_pvalue)
+    pvalues_zeta <- c(pvalues_zeta, DV1model_pvalue, DV2model_pvalue)
     
     #Minimum p-values
-    ExMin_pvaluezeta <- min(extra_pvalszeta)
-    ExMInt_pvaluezeta <- min(extraInt_pvalzeta)
+    min_pvaluezeta <- min(pvalues_zeta)
+    mInt_pvaluezeta <- min(int_pvalueszeta)
     
-    if (ExMInt_pvaluezeta <= 0.05) {
-      zvalue_zeta <- pval_converter(ExMInt_pvaluezeta)
+    if (mInt_pvaluezeta <= 0.05) {
+      zvalue_zeta <- pval_converter(mInt_pvaluezeta)
       zscores_zeta[zeta] <- zvalue_zeta
       zeta <- zeta + 1
-    } else if (ExMin_pvaluezeta <= 0.05) {
+    } else if (min_pvaluezeta <= 0.05){
       #"if the effect of condition was significant in any of these analyses"
-      zvalue_zeta <- pval_converter(ExMin_pvaluezeta)
+      zvalue_zeta <- pval_converter(min_pvaluezeta)
       zscores_zeta[zeta] <- zvalue_zeta
       zeta <- zeta + 1
+    } else {
+      extra_conditions <- sample(rep(c("low", "medium", "high"), 
+                                     length.out = extra_n*2))
+      #Column of Sit D "conditions" variables added
+      extraDV_list <- lapply(extra_conditions, zeta_mu_assign,
+                             mu_conditions = mu_conditions,
+                             sd = sd, r = r)
+      extra_dv <- do.call(rbind, extraDV_list)
+      extradata_zeta <- data.frame(conditions = extra_conditions, extra_dv)
+      
+      
+      #Adding Sit C "gender" variable for each observation
+      gender <- rbinom(nrow(extradata_zeta), size = 1, p = 0.5)
+      gender <- as.factor(
+        ifelse(gender == 1, "Female", "Male"))
+      extradata_zeta <- extradata_zeta %>% mutate(gender = gender)
+      
+      #Combining additional observations to current data set
+      combined_datazeta <- rbind(data_zeta, extradata_zeta)
+      
+      #T-tests for all 3 combos of conditions (Sit D) for DV1 and DV2 (Sit A)
+      extra_pvalszeta <- sitZ_ttests(combined_datazeta)
+      
+      #Gender main effect ANCOVA for DV1 (Sit C)
+      dv1_model <- lm(DV1 ~ conditions + gender, data = combined_datazeta)
+      dv1_fitP <- summary(dv1_model)$coefficients[
+        grep("^conditions", rownames(summary(dv1_model)$coefficients)),
+        "Pr(>|t|)"]
+      extra_pvalszeta <- c(extra_pvalszeta, dv1_fitP)
+      
+      #Gender main effect ANCOVA for DV2 (Sit C)
+      dv2_model <- lm(DV2 ~ conditions + gender, data = combined_datazeta)
+      dv2_fitP <- summary(dv2_model)$coefficients[
+        grep("^conditions", rownames(summary(dv2_model)$coefficients)),
+        "Pr(>|t|)"]
+      extra_pvalszeta <- c(extra_pvalszeta, dv2_fitP)
+      
+      #Gender*group interaction effect ANCOVA for DV1 (Sit C)
+      dv1_intmodel <- lm(DV1 ~ conditions*gender, data = combined_datazeta)
+      dv1_intfitP <- summary(
+        dv1_intmodel)$coefficients[grep("conditions.*:genderMale",
+                                        rownames(summary(
+                                          dv1_intmodel)$coefficients)),
+                                   "Pr(>|t|)"]
+      
+      #Gender*group interaction effect ANCOVA for DV2 (Sit C)
+      dv2_intmodel <- lm(DV2 ~ conditions*gender, data = combined_datazeta)
+      dv2_intfitP <- summary(
+        dv2_intmodel)$coefficients[grep("conditions.*:genderMale",
+                                        rownames(summary(
+                                          dv2_intmodel)$coefficients)),
+                                   "Pr(>|t|)"]
+      
+      #Interaction term ANCOVA model p-values
+      extraInt_pvalzeta <- c(dv1_intfitP, dv2_intfitP)
+      
+      #OLS regression for the linear trend of conditions for DV1 (Sit D)
+      lm_coding <- ifelse(combined_datazeta$conditions == "low", -1,
+                          ifelse(combined_datazeta$conditions == "medium", 0, 1))
+      
+      OLS_modelDV1 <- lm(DV1~lm_coding, data = combined_datazeta)
+      DV1model_pvalue <- coef(summary(OLS_modelDV1))["lm_coding", "Pr(>|t|)"]
+      
+      OLS_modelDV2 <- lm(DV2~lm_coding, data = combined_datazeta)
+      DV2model_pvalue <- coef(summary(OLS_modelDV2))["lm_coding", "Pr(>|t|)"]
+      
+      extra_pvalszeta <- c(extra_pvalszeta, DV1model_pvalue, DV2model_pvalue)
+      
+      #Minimum p-values
+      ExMin_pvaluezeta <- min(extra_pvalszeta)
+      ExMInt_pvaluezeta <- min(extraInt_pvalzeta)
+      
+      if (ExMInt_pvaluezeta <= 0.05) {
+        zvalue_zeta <- pval_converter(ExMInt_pvaluezeta)
+        zscores_zeta[zeta] <- zvalue_zeta
+        zeta <- zeta + 1
+      } else if (ExMin_pvaluezeta <= 0.05) {
+        #"if the effect of condition was significant in any of these analyses"
+        zvalue_zeta <- pval_converter(ExMin_pvaluezeta)
+        zscores_zeta[zeta] <- zvalue_zeta
+        zeta <- zeta + 1
+      }
     }
   }
+  
+  fit_zeta <- zcurve(zscores_zeta, control = list(parallel = TRUE))
+  plot(fit_zeta, CI = TRUE, annotation = TRUE, main = "Scenario Zeta")
+  zeta_plot <- recordPlot()
+  
+  zeta_list <- list(fit_zeta, zeta_plot)
+  return(zeta_list)
 }
 
-zscores_zeta
-
-fit_zeta <- zcurve(zscores_zeta, control = list(parallel = TRUE))
-
-zeta_plot <- plot(fit_zeta, CI = TRUE, annotation = TRUE,
-                  main = "Scenario Zeta")
 
 
 

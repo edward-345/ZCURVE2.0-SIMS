@@ -83,10 +83,9 @@ sitC_tests <- function(dataset) {
               int_pvalue = int_pvalue))
 }
 
-zeta_mu_assign <- function(g) {
-  rows <- which(conditions == g)
-  rnorm_multi(length(rows), vars = 2,
-              mu = mu_conditions[[g]], sd = c(1,1), r,
+zeta_mu_assign <- function(g, mu_conditions, sd, r) {
+  rnorm_multi(1, vars = 2,
+              mu = mu_conditions[[g]], sd, r,
               varnames=c("DV1","DV2"))
 }
 
