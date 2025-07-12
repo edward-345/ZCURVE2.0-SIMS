@@ -235,60 +235,69 @@ C_sim <- function(k_sims, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
 C_500 <- C_sim(500)
 #-------------------------------------------------------------------------------
 #SITUATION D: Ordinal test condition
-zscores_D <- numeric(k_sims)
-D <- 1 
-
-pvalues_scenarioD <- numeric(k_sims)
-
-for (i in 1:k_sims) {
-  #Running three conditions (e.g., low, medium, high) 
-  conditions <- sample(
-    rep(c("low", "medium", "high"), length.out = 40))
-  dv <- rnorm(n = 40, mean = 0, sd = 1)
-  data_D <- data.frame(conditions, dv)
+D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
+  zscores_D <- numeric(k_sims)
+  D <- 1 
   
-  #Conducting t tests for each of the three possible pairings of conditions 
-  LowMed_pvalue <- t.test(
-    dv ~ conditions,
-    data = subset(data_D, conditions %in% c("low","medium")))$p.value
-  LowHigh_pvalue <-t.test(
-    dv ~ conditions,
-    data = subset(data_D, conditions %in% c("low","high")))$p.value
-  MedHigh_pvalue <- t.test(
-    dv ~ conditions,
-    data = subset(data_D, conditions %in% c("medium","high")))$p.value
+  pvalues_scenarioD <- numeric(k_sims)
   
-  #ordinary least squares regression for the linear trend of all three 
-  #conditions (coding: low = –1, medium = 0, high = 1)
-  lm_coding <- ifelse(data_D$conditions == "low", -1,
-                      ifelse(data_D$conditions == "medium", 0, 1))
-  model_D <- lm(dv~lm_coding)
-  model_pvalue <- coef(summary(model_D))["lm_coding", "Pr(>|t|)"]
-  
-  pvalues_D <- c(LowMed_pvalue, LowHigh_pvalue, MedHigh_pvalue,
-                 model_pvalue)
-  min_pvalueD <- min(pvalues_D)
-  
-  #Report if the lowest of all three t-tests and OLS regression is significant
-  if (min_pvalueD <= 0.05) {
-    pvalues_scenarioD[i] <- min_pvalueD
-    zvalue_D <- pval_converter(min_pvalueD)
-    zscores_D[D] <- zvalue_D
-    D <- D + 1
-  } else {
-    pvalues_scenarioD[i] <- min_pvalueD
+  for (i in 1:k_sims) {
+    #Running three conditions (e.g., low, medium, high) 
+    conditions <- sample(
+      rep(c("low", "medium", "high"), length.out = n*2))
+    dv <- rnorm(n*2, mean = mu, sd)
+    data_D <- data.frame(conditions, dv)
+    
+    #Conducting t tests for each of the three possible pairings of conditions 
+    LowMed_pvalue <- t.test(
+      dv ~ conditions,
+      data = subset(data_D, conditions %in% c("low","medium")))$p.value
+    LowHigh_pvalue <-t.test(
+      dv ~ conditions,
+      data = subset(data_D, conditions %in% c("low","high")))$p.value
+    MedHigh_pvalue <- t.test(
+      dv ~ conditions,
+      data = subset(data_D, conditions %in% c("medium","high")))$p.value
+    
+    #ordinary least squares regression for the linear trend of all three 
+    #conditions (coding: low = –1, medium = 0, high = 1)
+    lm_coding <- ifelse(data_D$conditions == "low", -1,
+                        ifelse(data_D$conditions == "medium", 0, 1))
+    model_D <- lm(dv~lm_coding)
+    model_pvalue <- coef(summary(model_D))["lm_coding", "Pr(>|t|)"]
+    
+    pvalues_D <- c(LowMed_pvalue, LowHigh_pvalue, MedHigh_pvalue,
+                   model_pvalue)
+    min_pvalueD <- min(pvalues_D)
+    
+    #Report if the lowest of all three t-tests and OLS regression is significant
+    if (min_pvalueD <= 0.05) {
+      pvalues_scenarioD[i] <- min_pvalueD
+      zvalue_D <- pval_converter(min_pvalueD)
+      zscores_D[D] <- zvalue_D
+      D <- D + 1
+    } else {
+      pvalues_scenarioD[i] <- min_pvalueD
+    }
+    
   }
   
+  zscores_D <- zscores_D[1:(D - 1)]
+  fit_D <- zcurve(zscores_D, control = list(parallel = TRUE))
+  plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
+  D_plot <- recordPlot()
+  #Note that the proportion of p-values align with Simmons et al., 2011
+  proportions_D <- sig_pvalues(pvalues_scenarioD)
+  
+  D_list <- list(fit_D = fit_D,
+                 D_plot = D_plot,
+                 proportions_D = proportions_D)
+  
+  return(D_list)
 }
 
-zscores_D <- zscores_D[1:(D - 1)]
+D_500 <- D_sim(500)
 
-fit_D <- zcurve(zscores_D, control = list(parallel = TRUE))
-
-D_plot <- plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
-
-#Note that the proportion of p-values align with Simmons et al., 2011
-proportions_D <- sig_pvalues(pvalues_scenarioD)
 
 #-------------------------------------------------------------------------------
 
