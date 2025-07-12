@@ -3,69 +3,78 @@ source("helper_functions.R")
 library(tidyverse)
 
 #Number of simulations
-k_sims <- 15000
+#k_sims <- 15000
 #----------------------------------------------
 #SITUATIONS A,B COMBINED
-zscores_X <- numeric(k_sims)
-X <- 1 
-
-pvalues_scenarioX <- numeric(k_sims)
-
-for (i in 1:k_sims) {
-  control_X <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
-    varnames = c("Control1","Control2"))
-  exp_X <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
-    varnames = c("Dependent1","Dependent2"))
+X_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,  
+                  control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  zscores_X <- numeric(k_sims)
+  X <- 1 
   
-  pvalues_X <- sitA_ttests(control_X$Control1, control_X$Control2,
-                           exp_X$Dependent1, exp_X$Dependent2)
-  min_pvalueX <- min(pvalues_X)
+  pvalues_scenarioX <- numeric(k_sims)
   
-  if (min_pvalueX <= 0.05) {
-    pvalues_scenarioX[i] <- min_pvalueX
-    zvalue_X <- pval_converter(min_pvalueX)
-    zscores_X[X] <- zvalue_X
-    X <- X + 1
-  } else {
-    extracontrol_X <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+  for (i in 1:k_sims) {
+    control_X <- rnorm_multi(
+      n, vars = 2, mu = control_mu, sd, r,
       varnames = c("Control1","Control2"))
-    extraexp_X <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+    exp_X <- rnorm_multi(
+      n, vars = 2, mu = exp_mu, sd, r,
       varnames = c("Dependent1","Dependent2"))
     
-    combined_Control <- rbind(control_X, extracontrol_X)
-    combined_Dep <- rbind(exp_X, extraexp_X)
+    pvalues_X <- sitA_ttests(control_X$Control1, control_X$Control2,
+                             exp_X$Dependent1, exp_X$Dependent2)
+    min_pvalueX <- min(pvalues_X)
     
-    ExtraPvalues_X <- sitA_ttests(combined_Control$Control1,
-                                  combined_Control$Control2,
-                                  combined_Dep$Dependent1,
-                                  combined_Dep$Dependent2)
-    min_ExtraPvalue <- min(ExtraPvalues_X)
-    
-    if (min_ExtraPvalue <= 0.05) {
-      pvalues_scenarioX[i] <- min_ExtraPvalue
-      extrazvalue_X <- pval_converter(min_ExtraPvalue)
-      zscores_X[X] <- extrazvalue_X
-      X <- X+1
+    if (min_pvalueX <= 0.05) {
+      pvalues_scenarioX[i] <- min_pvalueX
+      zvalue_X <- pval_converter(min_pvalueX)
+      zscores_X[X] <- zvalue_X
+      X <- X + 1
     } else {
-      pvalues_scenarioX[i] <- min_ExtraPvalue
+      extracontrol_X <- rnorm_multi(
+        extra_n, vars = 2, mu = control_mu, sd, r,
+        varnames = c("Control1","Control2"))
+      extraexp_X <- rnorm_multi(
+        extra_n, vars = 2, mu = exp_mu, sd, r,
+        varnames = c("Dependent1","Dependent2"))
+      
+      combined_Control <- rbind(control_X, extracontrol_X)
+      combined_Dep <- rbind(exp_X, extraexp_X)
+      
+      ExtraPvalues_X <- sitA_ttests(combined_Control$Control1,
+                                    combined_Control$Control2,
+                                    combined_Dep$Dependent1,
+                                    combined_Dep$Dependent2)
+      min_ExtraPvalue <- min(ExtraPvalues_X)
+      
+      if (min_ExtraPvalue <= 0.05) {
+        pvalues_scenarioX[i] <- min_ExtraPvalue
+        extrazvalue_X <- pval_converter(min_ExtraPvalue)
+        zscores_X[X] <- extrazvalue_X
+        X <- X+1
+      } else {
+        pvalues_scenarioX[i] <- min_ExtraPvalue
+      }
     }
   }
+  
+  
+  zscores_X <- zscores_X[1:(X - 1)]
+  
+  fit_X <- zcurve(zscores_X, control = list(parallel = TRUE))
+  plot(fit_X, CI = TRUE, annotation = TRUE, main = "Scenario A+B")
+  X_plot <- recordPlot()
+  #Note that the proportion of p-values align with Simmons et al., 2011
+  proportions_X <- sig_pvalues(pvalues_scenarioX)
+  
+  X_list <- list(fit_X = fit_X,
+                 X_plot = X_plot,
+                 proportions_X = proportions_X)
+  
+  return(X_list)
 }
 
-
-zscores_X <- zscores_X[1:(X - 1)]
-
-fit_X <- zcurve(zscores_X, control = list(parallel = TRUE))
-
-X_plot <- plot(fit_X, CI = TRUE, annotation = TRUE, main = "Scenario A+B")
-
-#Note that the proportion of p-values align with Simmons et al., 2011
-proportions_X <- sig_pvalues(pvalues_scenarioX)
-
+X_500 <- X_sim(500)
 #----------------------------------------------
 #SITUATIONS A,B,C COMBINED
 zscores_Y <- numeric(k_sims)
