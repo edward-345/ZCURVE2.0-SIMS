@@ -38,48 +38,59 @@ simulation <- function(k_sims, n) {
 test <- simulation(500, 20)
 #-------------------------------------------------------------------------------
 #SITUATION A: Two DVs for each observation
-zscores_A <- numeric(k_sims)
-A <- 1
-
-#Vector of all 15,000 p-values generated
-pvalues_scenarioA <- numeric(k_sims)
-
-for (i in 1:k_sims) {
-  #Generating control and exp group from N(0,1) with 2 DVs correlated by r=0.5 
-  control_A <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
-    varnames = c("Control1","Control2"))
-  exp_A <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
-    varnames = c("Dependent1","Dependent2"))
+A_sim <- function(k_sims, n = 20, r = 0.5, 
+                  control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  zscores_A <- numeric(k_sims)
+  A <- 1
   
-  #Helper function conducts 3 t-tests, one on each of two dependent variables 
-  #and a third on the average of these two variables
-  pvalue_A <- sitA_ttests(control_A$Control1, control_A$Control2,
-              exp_A$Dependent1, exp_A$Dependent2)
-  min_pvalue <- min(pvalue_A)
+  #Vector of all 15,000 p-values generated
+  pvalues_scenarioA <- numeric(k_sims)
   
-  #Add p-value to pvalues_scenarioA regardless of significance
-  pvalues_scenarioA[i] <- min_pvalue
-  
-  #If the smallest p-value of the three t-tests is significant at .05, convert 
-  #to z-score and add to zscores_A vector
-  if (min_pvalue <= 0.05) {
-    zvalue_A <- pval_converter(min_pvalue)
-    zscores_A[A] <- zvalue_A
-    A <- A + 1
+  for (i in 1:k_sims) {
+    #Generating control and exp group from N(0,1) with 2 DVs correlated by r=0.5 
+    control_A <- rnorm_multi(
+      n, vars = 2, control_mu, sd = c(1,1), r,
+      varnames = c("Control1","Control2"))
+    exp_A <- rnorm_multi(
+      n, vars = 2, exp_mu, sd = c(1,1), r,
+      varnames = c("Dependent1","Dependent2"))
+    
+    #Helper function conducts 3 t-tests, one on each of two dependent variables 
+    #and a third on the average of these two variables
+    pvalue_A <- sitA_ttests(control_A$Control1, control_A$Control2,
+                            exp_A$Dependent1, exp_A$Dependent2)
+    min_pvalue <- min(pvalue_A)
+    
+    #Add p-value to pvalues_scenarioA regardless of significance
+    pvalues_scenarioA[i] <- min_pvalue
+    
+    #If the smallest p-value of the three t-tests is significant at .05, convert 
+    #to z-score and add to zscores_A vector
+    if (min_pvalue <= 0.05) {
+      zvalue_A <- pval_converter(min_pvalue)
+      zscores_A[A] <- zvalue_A
+      A <- A + 1
+    }
   }
+  
+  #Trim unused cells
+  zscores_A <- zscores_A[1:(A - 1)]
+  
+  fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
+  plot(fit_A, CI = TRUE, annotation = TRUE, main = "Scenario A")
+  A_plot <- recordPlot()
+  proportions_A <- sig_pvalues(pvalues_scenarioA)
+  
+  A_list <- list(fit_A = fit_A,
+                 A_plot = A_plot,
+                 proportions_A = proportions_A)
+  
+  return(A_list)
 }
 
-#Trim unused cells
-zscores_A <- zscores_A[1:(A - 1)]
+#n = 500 under null hypothesis (false postives)
+A_500 <- A_sim(500)
 
-fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
-
-A_plot <- plot(fit_A, CI = TRUE, annotation = TRUE, main = "Scenario A")
-
-#Note that the proportion of p-values align with Simmons et al., 2011
-proportions_A <- sig_pvalues(pvalues_scenarioA)
 
 #-------------------------------------------------------------------------------
 #SITUATION B: Optional Stopping
