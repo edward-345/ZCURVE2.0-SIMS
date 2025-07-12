@@ -79,6 +79,7 @@ A_sim <- function(k_sims, n = 20, r = 0.5,
   fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
   plot(fit_A, CI = TRUE, annotation = TRUE, main = "Scenario A")
   A_plot <- recordPlot()
+  #Note that the proportion of p-values align with Simmons et al., 2011
   proportions_A <- sig_pvalues(pvalues_scenarioA)
   
   A_list <- list(fit_A = fit_A,
@@ -94,54 +95,64 @@ A_500 <- A_sim(500)
 
 #-------------------------------------------------------------------------------
 #SITUATION B: Optional Stopping
-zscores_B <- numeric(k_sims)
-B <- 1 
-
-pvalues_scenarioB <- numeric(k_sims)
-
-for (i in 1:k_sims) {
-  #Conducting one t-test after collecting 20 observations per cell 
-  control_B <- rnorm(n = 20, mean = 0, sd = 1)
-  exp_B <- rnorm(n = 20, mean = 0, sd = 1)
-  result_B <- t.test(control_B, exp_B, var.equal = TRUE)
-  pvalue_B <- result_B$p.value
+B_sim <- function(k_sims, n = 20, extra_n = 10,
+                  control_mu = 0, exp_mu = 0, sd = 1) {
+  zscores_B <- numeric(k_sims)
+  B <- 1 
   
-  if (pvalue_B <= 0.05) {
-    #If the result is significant, the researcher stops collecting data and 
-    #reports the result
-    pvalues_scenarioB[i] <- pvalue_B
-    zvalue_B <- pval_converter(pvalue_B)
-    zscores_B[B] <- zvalue_B
-    B <- B + 1
-  } else {
-    #If the result is non significant, the researcher collects 10 additional 
-    #observations per condition
-    extracontrol_B <- rnorm(n = 10, mean = 0, sd = 1)
-    extraexp_B <- rnorm(n = 10, mean = 0, sd = 1)
-    extraresult_B <- t.test(c(control_B, extracontrol_B),
-                            c(exp_B, extraexp_B), var.equal = TRUE)
-    extrapvalue_B <- extraresult_B$p.value
+  pvalues_scenarioB <- numeric(k_sims)
+  
+  for (i in 1:k_sims) {
+    #Conducting one t-test after collecting 20 observations per cell 
+    control_B <- rnorm(n, control_mu, sd)
+    exp_B <- rnorm(n, exp_mu, sd)
+    result_B <- t.test(control_B, exp_B, var.equal = TRUE)
+    pvalue_B <- result_B$p.value
     
-    if (extrapvalue_B <= 0.05) {
-      #then again tests for significance
-      pvalues_scenarioB[i] <- extrapvalue_B
-      extrazvalue_B <- pval_converter(extrapvalue_B)
-      zscores_B[B] <- extrazvalue_B
-      B <- B+1
+    if (pvalue_B <= 0.05) {
+      #If the result is significant, the researcher stops collecting data and 
+      #reports the result
+      pvalues_scenarioB[i] <- pvalue_B
+      zvalue_B <- pval_converter(pvalue_B)
+      zscores_B[B] <- zvalue_B
+      B <- B + 1
     } else {
-      pvalues_scenarioB[i] <- extrapvalue_B
+      #If the result is non significant, the researcher collects 10 additional 
+      #observations per condition
+      extracontrol_B <- rnorm(extra_n, control_mu, sd)
+      extraexp_B <- rnorm(extra_n, exp_mu, sd)
+      extraresult_B <- t.test(c(control_B, extracontrol_B),
+                              c(exp_B, extraexp_B), var.equal = TRUE)
+      extrapvalue_B <- extraresult_B$p.value
+      
+      if (extrapvalue_B <= 0.05) {
+        #then again tests for significance
+        pvalues_scenarioB[i] <- extrapvalue_B
+        extrazvalue_B <- pval_converter(extrapvalue_B)
+        zscores_B[B] <- extrazvalue_B
+        B <- B+1
+      } else {
+        pvalues_scenarioB[i] <- extrapvalue_B
+      }
     }
   }
+  
+  zscores_B <- zscores_B[1:(B - 1)]
+  
+  fit_B <- zcurve(zscores_B, control = list(parallel = TRUE))
+  plot(fit_B, CI = TRUE, annotation = TRUE, main = "Scenario B")
+  B_plot <- recordPlot()
+  #Note that the proportion of p-values align with Simmons et al., 2011
+  proportions_B <- sig_pvalues(pvalues_scenarioB)
+  
+  B_list <- list(fit_B = fit_B,
+                 B_plot = B_plot,
+                 proportions_B = proportions_B)
+  
+  return(B_list)
 }
 
-zscores_B <- zscores_B[1:(B - 1)]
-
-fit_B <- zcurve(zscores_B, control = list(parallel = TRUE))
-
-B_plot <- plot(fit_B, CI = TRUE, annotation = TRUE, main = "Scenario B")
-
-#Note that the proportion of p-values align with Simmons et al., 2011
-proportions_B <- sig_pvalues(pvalues_scenarioB)
+B_500 <- B_sim(500)
 
 #-------------------------------------------------------------------------------
 #SITUATION C: Main effect or interaction term ANCOVAs
