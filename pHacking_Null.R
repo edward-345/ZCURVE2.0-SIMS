@@ -219,6 +219,7 @@ C_sim <- function(k_sims, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   }
   
   zscores_C <- zscores_C[1:(C - 1)]
+  
   fit_C <- zcurve(zscores_C, control = list(parallel = TRUE))
   plot(fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
   C_plot <- recordPlot()
@@ -283,6 +284,7 @@ D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
   }
   
   zscores_D <- zscores_D[1:(D - 1)]
+  
   fit_D <- zcurve(zscores_D, control = list(parallel = TRUE))
   plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
   D_plot <- recordPlot()
