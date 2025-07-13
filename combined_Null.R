@@ -77,132 +77,141 @@ X_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
 X_500 <- X_sim(500)
 #----------------------------------------------
 #SITUATIONS A,B,C COMBINED
-zscores_Y <- numeric(k_sims)
-Y <- 1 
-
-pvalues_scenarioY <- numeric(k_sims)
-
-for (i in 1:k_sims) {
-  control_Y <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
-    varnames = c("DV1","DV2"))
-  exp_Y <- rnorm_multi(
-    n = 20, vars = 2, mu = c(0,0), sd = c(1,1), r = 0.5,
-    varnames = c("DV1","DV2"))
+Y_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
+                  control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  zscores_Y <- numeric(k_sims)
+  Y <- 1 
   
-  control_Y$group <- "Control"
-  exp_Y$group <- "Experimental"
+  pvalues_scenarioY <- numeric(k_sims)
   
-  data_Y <- rbind(control_Y, exp_Y)
-  
-  gender <- rbinom(n = 40, size = 1, p = 0.5)
-  gender <- as.factor(
-    ifelse(gender == 1, "Female", "Male"))
-  data_Y <- data_Y %>% mutate(gender = gender)
-  
-  pvalues_Y <- sitA_ttests(control_Y$DV1, control_Y$DV2,
-                           exp_Y$DV1, exp_Y$DV2)
-  
-  dv1_model <- lm(DV1 ~ group + gender, data = data_Y)
-  dv1_fitP <- summary(dv1_model)$coefficients[
-    "groupExperimental","Pr(>|t|)"]
-  pvalues_Y <- c(pvalues_Y, dv1_fitP)
-  
-  dv2_model <- lm(DV2 ~ group + gender, data = data_Y)
-  dv2_fitP <- summary(dv2_model)$coefficients[
-    "groupExperimental","Pr(>|t|)"]
-  pvalues_Y <- c(pvalues_Y, dv2_fitP)
-  
-  dv1_intmodel <- lm(DV1 ~ group*gender, data = data_Y)
-  dv1_intfitP <- summary(dv1_intmodel)$coefficients[
-    "groupExperimental:genderMale","Pr(>|t|)"]
-  
-  dv2_intmodel <- lm(DV2 ~ group*gender, data = data_Y)
-  dv2_intfitP <- summary(dv2_intmodel)$coefficients[
-    "groupExperimental:genderMale","Pr(>|t|)"]
-  int_pvaluesY <- c(dv1_intfitP, dv2_intfitP)
-  
-  min_pvalueY <- min(pvalues_Y)
-  mInt_pvalueY <- min(int_pvaluesY) 
-  
-  if (mInt_pvalueY <= 0.05) {
-    pvalues_scenarioY[i] <- mInt_pvalueY
-    zvalue_Y <- pval_converter(mInt_pvalueY)
-    zscores_Y[Y] <- zvalue_Y
-    Y <- Y + 1
-  } else if (min_pvalueY <= 0.05){
-    pvalues_scenarioY[i] <- min_pvalueY
-    zvalue_Y <- pval_converter(min_pvalueY)
-    zscores_Y[Y] <- zvalue_Y
-    Y <- Y + 1
-    } else {
-    extracontrol_Y <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+  for (i in 1:k_sims) {
+    control_Y <- rnorm_multi(
+      n, vars = 2, mu = control_mu, sd, r,
       varnames = c("DV1","DV2"))
-    extraexp_Y <- rnorm_multi(
-      n = 10, vars = 2, mu = c(0,0),sd = c(1,1), r = 0.5,
+    exp_Y <- rnorm_multi(
+      n, vars = 2, mu = exp_mu, sd, r,
       varnames = c("DV1","DV2"))
     
-    extracontrol_Y$group <- "Control"
-    extraexp_Y$group <- "Experimental"
+    control_Y$group <- "Control"
+    exp_Y$group <- "Experimental"
     
-    extra_dataY <- rbind(extracontrol_Y, extraexp_Y)
-    gender <- rbinom(n = 20, size = 1, p = 0.5)
+    data_Y <- rbind(control_Y, exp_Y)
+    
+    gender <- rbinom(n*2, size = 1, p = 0.5)
     gender <- as.factor(
       ifelse(gender == 1, "Female", "Male"))
-    extra_dataY <- extra_dataY %>% mutate(gender = gender)
+    data_Y <- data_Y %>% mutate(gender = gender)
     
-    combined_dataY <- rbind(data_Y, extra_dataY)
+    pvalues_Y <- sitA_ttests(control_Y$DV1, control_Y$DV2,
+                             exp_Y$DV1, exp_Y$DV2)
     
-    extra_pvalY <- sitA_ttests(extracontrol_Y$DV1, extracontrol_Y$DV2,
-                               extraexp_Y$DV1, extraexp_Y$DV2)
-    
-    Exdv1_model <- lm(DV1 ~ group + gender, data = combined_dataY)
-    Exdv1_fitP <- summary(Exdv1_model)$coefficients[
+    dv1_model <- lm(DV1 ~ group + gender, data = data_Y)
+    dv1_fitP <- summary(dv1_model)$coefficients[
       "groupExperimental","Pr(>|t|)"]
-    extra_pvalY <- c(extra_pvalY, Exdv1_fitP)
-    Exdv2_model <- lm(DV2 ~ group + gender, data = combined_dataY)
-    Exdv2_fitP <- summary(Exdv2_model)$coefficients[
+    pvalues_Y <- c(pvalues_Y, dv1_fitP)
+    
+    dv2_model <- lm(DV2 ~ group + gender, data = data_Y)
+    dv2_fitP <- summary(dv2_model)$coefficients[
       "groupExperimental","Pr(>|t|)"]
-    extra_pvalY <- c(extra_pvalY, Exdv2_fitP)
+    pvalues_Y <- c(pvalues_Y, dv2_fitP)
     
-    Exdv1_intmodel <- lm(DV1 ~ group*gender, data = combined_dataY)
-    Exdv1_intfitP <- summary(Exdv1_intmodel)$coefficients[
+    dv1_intmodel <- lm(DV1 ~ group*gender, data = data_Y)
+    dv1_intfitP <- summary(dv1_intmodel)$coefficients[
       "groupExperimental:genderMale","Pr(>|t|)"]
-    Exdv2_intmodel <- lm(DV2 ~ group*gender, data = combined_dataY)
-    Exdv2_intfitP <- summary(Exdv2_intmodel)$coefficients[
+    
+    dv2_intmodel <- lm(DV2 ~ group*gender, data = data_Y)
+    dv2_intfitP <- summary(dv2_intmodel)$coefficients[
       "groupExperimental:genderMale","Pr(>|t|)"]
-    Extraint_pvaLY <- c(Exdv1_intfitP, Exdv2_intfitP)
+    int_pvaluesY <- c(dv1_intfitP, dv2_intfitP)
     
-    Exmin_pvalY <- min(extra_pvalY)
-    ExmInt_pvalY <- min(Extraint_pvaLY)
+    min_pvalueY <- min(pvalues_Y)
+    mInt_pvalueY <- min(int_pvaluesY) 
     
-    if (ExmInt_pvalY <= 0.05) {
-      pvalues_scenarioY[i] <- ExmInt_pvalY
-      extrazvalue_Y <- pval_converter(ExmInt_pvalY)
-      zscores_Y[Y] <- extrazvalue_Y
-      Y <- Y+1
-    } else if (Exmin_pvalY <= 0.05) {
-      pvalues_scenarioY[i] <- Exmin_pvalY
-      extrazvalue_Y <- pval_converter(Exmin_pvalY)
-      zscores_Y[Y] <- extrazvalue_Y
-      Y <- Y+1
+    if (mInt_pvalueY <= 0.05) {
+      pvalues_scenarioY[i] <- mInt_pvalueY
+      zvalue_Y <- pval_converter(mInt_pvalueY)
+      zscores_Y[Y] <- zvalue_Y
+      Y <- Y + 1
+    } else if (min_pvalueY <= 0.05){
+      pvalues_scenarioY[i] <- min_pvalueY
+      zvalue_Y <- pval_converter(min_pvalueY)
+      zscores_Y[Y] <- zvalue_Y
+      Y <- Y + 1
     } else {
-      all_pvalY <- c(extra_pvalY, Extraint_pvaLY)
-      pvalues_scenarioY[i] <- min(all_pvalY)
+      extracontrol_Y <- rnorm_multi(
+        extra_n, vars = 2, mu = control_mu,sd, r,
+        varnames = c("DV1","DV2"))
+      extraexp_Y <- rnorm_multi(
+        extra_n, vars = 2, mu = exp_mu,sd, r,
+        varnames = c("DV1","DV2"))
+      
+      extracontrol_Y$group <- "Control"
+      extraexp_Y$group <- "Experimental"
+      
+      extra_dataY <- rbind(extracontrol_Y, extraexp_Y)
+      gender <- rbinom(extra_n*2, size = 1, p = 0.5)
+      gender <- as.factor(
+        ifelse(gender == 1, "Female", "Male"))
+      extra_dataY <- extra_dataY %>% mutate(gender = gender)
+      
+      combined_dataY <- rbind(data_Y, extra_dataY)
+      
+      extra_pvalY <- sitA_ttests(extracontrol_Y$DV1, extracontrol_Y$DV2,
+                                 extraexp_Y$DV1, extraexp_Y$DV2)
+      
+      Exdv1_model <- lm(DV1 ~ group + gender, data = combined_dataY)
+      Exdv1_fitP <- summary(Exdv1_model)$coefficients[
+        "groupExperimental","Pr(>|t|)"]
+      extra_pvalY <- c(extra_pvalY, Exdv1_fitP)
+      Exdv2_model <- lm(DV2 ~ group + gender, data = combined_dataY)
+      Exdv2_fitP <- summary(Exdv2_model)$coefficients[
+        "groupExperimental","Pr(>|t|)"]
+      extra_pvalY <- c(extra_pvalY, Exdv2_fitP)
+      
+      Exdv1_intmodel <- lm(DV1 ~ group*gender, data = combined_dataY)
+      Exdv1_intfitP <- summary(Exdv1_intmodel)$coefficients[
+        "groupExperimental:genderMale","Pr(>|t|)"]
+      Exdv2_intmodel <- lm(DV2 ~ group*gender, data = combined_dataY)
+      Exdv2_intfitP <- summary(Exdv2_intmodel)$coefficients[
+        "groupExperimental:genderMale","Pr(>|t|)"]
+      Extraint_pvaLY <- c(Exdv1_intfitP, Exdv2_intfitP)
+      
+      Exmin_pvalY <- min(extra_pvalY)
+      ExmInt_pvalY <- min(Extraint_pvaLY)
+      
+      if (ExmInt_pvalY <= 0.05) {
+        pvalues_scenarioY[i] <- ExmInt_pvalY
+        extrazvalue_Y <- pval_converter(ExmInt_pvalY)
+        zscores_Y[Y] <- extrazvalue_Y
+        Y <- Y+1
+      } else if (Exmin_pvalY <= 0.05) {
+        pvalues_scenarioY[i] <- Exmin_pvalY
+        extrazvalue_Y <- pval_converter(Exmin_pvalY)
+        zscores_Y[Y] <- extrazvalue_Y
+        Y <- Y+1
+      } else {
+        all_pvalY <- c(extra_pvalY, Extraint_pvaLY)
+        pvalues_scenarioY[i] <- min(all_pvalY)
+      }
     }
   }
+  
+  zscores_Y <- zscores_Y[1:(Y - 1)]
+  
+  fit_Y <- zcurve(zscores_Y, control = list(parallel = TRUE))
+  plot(fit_Y, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C")
+  Y_plot <- recordPlot()
+  #Note that the proportion of p-values align with Simmons et al., 2011
+  proportions_Y <- sig_pvalues(pvalues_scenarioY)
+  
+  Y_list <- list(fit_Y = fit_Y,
+                 Y_plot = Y_plot,
+                 proportions_Y = proportions_Y)
+  
+  return(Y_list)
 }
 
-zscores_Y <- zscores_Y[1:(Y - 1)]
-
-fit_Y <- zcurve(zscores_Y, control = list(parallel = TRUE))
-
-Y_plot <- plot(fit_Y, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C")
-
-#Note that the proportion of p-values align with Simmons et al., 2011
-proportions_Y <- sig_pvalues(pvalues_scenarioY)
-
+Y_500 <- Y_sim(500)
 #----------------------------------------------
 #SITUATIONS A,B,C,D COMBINED
 zscores_Z <- numeric(k_sims)
