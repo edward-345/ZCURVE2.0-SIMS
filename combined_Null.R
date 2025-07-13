@@ -214,6 +214,7 @@ Y_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
 Y_500 <- Y_sim(500)
 #----------------------------------------------
 #SITUATIONS A,B,C,D COMBINED
+
 zscores_Z <- numeric(k_sims)
 Z <- 1 
 
