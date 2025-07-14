@@ -10,7 +10,9 @@ set.seed(666)
 #Situation A,B combined, fixed number of significant z-scores
 chi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,  
                     control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  
   zscores_chi <- numeric(k_sig)
+  pval_list <- list()
   chi <- 1 
   
   while (chi <= k_sig) {
@@ -26,6 +28,7 @@ chi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
     minpval_chi <- min(pvalues_chi)
     
     if (minpval_chi <= 0.05) {
+      pval_list[[length(pval_list) + 1]] <- minpval_chi
       zvalue_chi <- pval_converter(minpval_chi)
       zscores_chi[chi] <- zvalue_chi
       chi <- chi + 1
@@ -47,31 +50,35 @@ chi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
       min_ExtraPvalue <- min(ExtraPvalues_chi)
       
       if (min_ExtraPvalue <= 0.05) {
+        pval_list[[length(pval_list) + 1]] <- min_ExtraPvalue
         extrazvalue_chi <- pval_converter(min_ExtraPvalue)
         zscores_chi[chi] <- extrazvalue_chi
         chi <- chi+1
+      } else {
+        pval_list[[length(pval_list) + 1]] <- min_ExtraPvalue
       }
     }
   }
   
   fit_chi <- zcurve(zscores_chi, control = list(parallel = TRUE))
-  plot(fit_chi, CI = TRUE, annotation = TRUE, main = "Scenario Chi")
-  chi_plot <- recordPlot()
+  pval_list <- unlist(pval_list)
   
   chi_list <- list(fit_chi = fit_chi,
-                    chi_plot = chi_plot)
+                    pval_list = pval_list)
   
   return(chi_list)
 }
 
 chi_500 <- chi_sim(500)
 summary(chi_500$fit_chi)
+chi_500.plot <- plot(chi_500$fit_chi,
+                     CI = TRUE, annotation = TRUE, main = "Scenario Chi")
 
-chi_alt <- chi_sim(500, exp_mu = c(0.2, 0.2))
-summary(chi_alt$fit_chi)
-
-chi_alt_strong <- chi_sim(500, exp_mu = c(0.8, 0.8))
-summary(chi_alt_strong$fit_chi)
+chi_500.pvalModel <- zcurve(p = chi_500$pval_list,
+                              control = list(parallel = TRUE))
+chi_500.pvalPlot <- plot(chi_500.pvalModel,
+                           CI = TRUE, annotation = TRUE, main = "Scenario Chi")
+chi_500.pvals <- hist(chi_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation A,B,C combined, fixed number of significant z-scores
 psi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
@@ -211,6 +218,7 @@ summary(psi_alt_strong$fit_psi)
 #Situation A,B,C,D combined, fixed number of significant z-scores
 zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
                      mu = 0, sd = c(1,1)) {
+  
   zscores_zeta <- numeric(k_sig)
   zeta <- 1
   
