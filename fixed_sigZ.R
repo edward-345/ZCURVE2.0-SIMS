@@ -10,12 +10,9 @@ set.seed(666)
 #SITUATION ALPHA: Two DVs for each observation
 alpha_sim <- function(k_sig, n = 20, r = 0.5, 
                       control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
-  if (!is.numeric(exp_mu) || length(exp_mu) != 2 ||
-      !is.numeric(control_mu) || length(control_mu) != 2 ||
-      !is.numeric(sd) || length(sd) != 2) 
-    {stop("`mu and sd` must be a numeric vector of length 2, e.g. c(0, 0).")}
   
   zscores_alpha <- numeric(k_sig)
+  pval_list <- list()
   alpha <- 1
   
   while (alpha <= k_sig) {
@@ -37,35 +34,42 @@ alpha_sim <- function(k_sig, n = 20, r = 0.5,
     #If the smallest p-value of the three t-tests is significant at .05, convert 
     #to z-score and add to zscores_alpha vector
     if (min_pvalue <= 0.05) {
+      pval_list[[length(pval_list) + 1]] <- min_pvalue
       zvalue_alpha <- pval_converter(min_pvalue)
       zscores_alpha[alpha] <- zvalue_alpha
       alpha <- alpha + 1
+    } else {
+      pval_list[[length(pval_list) + 1]] <- min_pvalue
     }
   }
   
   fit_alpha <- zcurve(zscores_alpha, control = list(parallel = TRUE))
-  plot(fit_alpha, CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
-  alpha_plot <- recordPlot()
+  pval_list <- unlist(pval_list)
   
   alpha_list <- list(fit_alpha = fit_alpha,
-                     alpha_plot = alpha_plot)
+                     pval_list = pval_list)
   
   return(alpha_list)
 }
 
+# 500 studies under null hypothesis, both groups come from N(0,1)
 alpha_500 <- alpha_sim(500)
 summary(alpha_500$fit_alpha)
+alpha_500.plot <- plot(alpha_500$fit_alpha,
+                       CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
 
-alpha_alt <- alpha_sim(500, exp_mu = c(0.2,0.2))
-summary(alpha_alt$fit_alpha)
-
-alpha_alt_strong <- alpha_sim(500, exp_mu = c(0.8,0.8))
-summary(alpha_alt$fit_alpha)
+alpha_500.pvalModel <- zcurve(p = alpha_500$pval_list,
+                             control = list(parallel = TRUE))
+alpha_500.pvalPlot <- plot(alpha_500.pvalModel,
+                          CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
+alpha_500.pvals <- hist(alpha_500$pval_list)
 #-------------------------------------------------------------------------------
 #SITUATION BETA: Optional Stopping
 beta_sim <- function(k_sig, n = 20, extra_n = 10,
                      control_mu = 0, exp_mu = 0) {
+  
   zscores_beta <- numeric(k_sig)
+  pval_list <- list()
   beta <- 1 
   
   while (beta <= k_sig) {
@@ -78,6 +82,7 @@ beta_sim <- function(k_sig, n = 20, extra_n = 10,
     if (pvalue_beta <= 0.05) {
       #If the result is significant, the researcher stops collecting data and 
       #reports the result
+      pval_list[[length(pval_list) + 1]] <- pvalue_beta
       zvalue_beta <- pval_converter(pvalue_beta)
       zscores_beta[beta] <- zvalue_beta
       beta <- beta + 1
@@ -92,34 +97,36 @@ beta_sim <- function(k_sig, n = 20, extra_n = 10,
       
       if (extrapvalue_beta <= 0.05) {
         #then again tests for significance
+        pval_list[[length(pval_list) + 1]] <- extrapvalue_beta
         extrazvalue_beta <- pval_converter(extrapvalue_beta)
         zscores_beta[beta] <- extrazvalue_beta
         beta <- beta+1
+      } else {
+        pval_list[[length(pval_list) + 1]] <- extrapvalue_beta
       }
     }
   }
   
   fit_beta <- zcurve(zscores_beta, control = list(parallel = TRUE))
-  plot(fit_beta, CI = TRUE, annotation = TRUE, main = "Scenario Beta")
-  beta_plot <- recordPlot()
+  pval_list <- unlist(pval_list)
   
   beta_list <- list(fit_beta = fit_beta,
-                     beta_plot = beta_plot)
+                    pval_list = pval_list)
   
   return(beta_list)
 }
 
-#500 studies under null hypothesis, both groups come from N(0,1)
+# 500 studies under null hypothesis, both groups come from N(0,1)
 beta_500 <- beta_sim(500)
 summary(beta_500$fit_beta)
+beta_500.plot <- plot(beta_500$fit_beta,
+                      CI = TRUE, annotation = TRUE, main = "Scenario Beta")
 
-#Weak effect size
-beta_alt <- beta_sim(500, exp_mu = 0.2)
-summary(beta_alt$fit_beta)
-
-#Strong effect size
-beta_alt_strong <- beta_sim(500, exp_mu = 0.8)
-summary(beta_alt$fit_beta)
+beta_500.pvalModel <- zcurve(p = beta_500$pval_list,
+                             control = list(parallel = TRUE))
+beta_500.pvalPlot <- plot(beta_500.pvalModel,
+                          CI = TRUE, annotation = TRUE, main = "Scenario Beta")
+beta_500.pvals <- hist(beta_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation Gamma: Main effect or interaction term ANCOVAs
 gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
