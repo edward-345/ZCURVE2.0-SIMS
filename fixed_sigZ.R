@@ -192,6 +192,7 @@ gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   
   fit_gamma <- zcurve(zscores_gamma, control = list(parallel = TRUE))
   pval_list <- unlist(pval_list)
+  
   gamma_list <- list(fit_gamma = fit_gamma,
                      pval_list = pval_list)
   
@@ -212,7 +213,9 @@ gamma_500.pvals <- hist(gamma_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation Delta: Ordinal test conditions
 delta_sim <- function(k_sig, n = 20, mu = 0, sd = 1) {
+  
   zscores_delta <- numeric(k_sig)
+  pval_list <- list()
   delta <- 1
   
   while (delta <= k_sig) {
@@ -248,30 +251,34 @@ delta_sim <- function(k_sig, n = 20, mu = 0, sd = 1) {
     
     #Report if the lowest of all three t-tests and OLS regression is significant
     if (minpval_delta <= 0.05) {
+      pval_list[[length(pval_list) + 1]] <- minpval_delta
       zvalue_delta <- pval_converter(minpval_delta)
       zscores_delta[delta] <- zvalue_delta
       delta <- delta + 1
+    } else {
+      pval_list[[length(pval_list) + 1]] <- minpval_delta
     }
   }
   
   fit_delta <- zcurve(zscores_delta, control = list(parallel = TRUE))
-  plot(fit_delta, CI = TRUE, annotation = TRUE, main = "Scenario Delta")
-  delta_plot <- recordPlot()
+  pval_list <- unlist(pval_list)
   
   delta_list <- list(fit_delta = fit_delta,
-                     delta_plot = delta_plot)
+                     pval_list = pval_list)
   
   return(delta_list)
 }
 
 delta_500 <- delta_sim(500)
 summary(delta_500$fit_delta)
+delta_500.plot <- plot(delta_500$fit_delta,
+                       CI = TRUE, annotation = TRUE, main = "Scenario Delta")
 
-delta_alt <- delta_sim(500, mu = 0.2)
-summary(delta_alt$fit_delta)
-
-delta_alt_strong <- delta_sim(500, mu = 0.8)
-summary(delta_alt_strong$fit_delta)
+delta_500.pvalModel <- zcurve(p = delta_500$pval_list,
+                              control = list(parallel = TRUE))
+delta_500.pvalPlot <- plot(delta_500.pvalModel,
+                           CI = TRUE, annotation = TRUE, main = "Scenario Delta")
+delta_500.pvals <- hist(delta_500$pval_list)
 
 
 
