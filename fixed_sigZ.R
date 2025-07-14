@@ -130,7 +130,9 @@ beta_500.pvals <- hist(beta_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation Gamma: Main effect or interaction term ANCOVAs
 gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
+  
   zscores_gamma <- numeric(k_sig)
+  pval_list <- list()
   gamma <- 1
   
   while (gamma <= k_sig) {
@@ -172,24 +174,26 @@ gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
     #We report a significant effect if the effect of condition was significant in 
     #any of these analyses or if the Gender×Condition interaction was significant.
     if (int_pvalue <= 0.05) {
+      pval_list[[length(pval_list) + 1]] <- int_pvalue
       zvalue_gamma <- pval_converter(int_pvalue)
       zscores_gamma[gamma] <- zvalue_gamma
       gamma <- gamma + 1
     } else {
       if (minpval_gamma <= 0.05) {
+        pval_list[[length(pval_list) + 1]] <- minpval_gamma
         zvalue_gamma <- pval_converter(minpval_gamma)
         zscores_gamma[gamma] <- zvalue_gamma
         gamma <- gamma + 1
+      } else {
+        pval_list[[length(pval_list) + 1]] <- minpval_gamma
       }
     }
   }
   
   fit_gamma <- zcurve(zscores_gamma, control = list(parallel = TRUE))
-  plot(fit_gamma, CI = TRUE, annotation = TRUE, main = "Scenario Gamma")
-  gamma_plot <- recordPlot()
-  
+  pval_list <- unlist(pval_list)
   gamma_list <- list(fit_gamma = fit_gamma,
-                     gamma_plot = gamma_plot)
+                     pval_list = pval_list)
   
   return(gamma_list)
 }
@@ -197,14 +201,14 @@ gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
 #Null hypothesis
 gamma_500 <- gamma_sim(500)
 summary(gamma_500$fit_gamma)
+gamma_500.plot <- plot(gamma_500$fit_gamma,
+                       CI = TRUE, annotation = TRUE, main = "Scenario Gamma")
 
-#Experimental group from N(0.2, 0)
-gamma_alt <- gamma_sim(500, exp_mu = 0.2)
-summary(gamma_alt$fit_gamma)
-
-#Experimental group from N(0.8, 0)
-gamma_alt_strong <- gamma_sim(500, exp_mu = 0.8)
-summary(gamma_alt_strong$fit_gamma)
+gamma_500.pvalModel <- zcurve(p = gamma_500$pval_list,
+                             control = list(parallel = TRUE))
+gamma_500.pvalPlot <- plot(gamma_500.pvalModel,
+                          CI = TRUE, annotation = TRUE, main = "Scenario Gamma")
+gamma_500.pvals <- hist(gamma_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation Delta: Ordinal test conditions
 delta_sim <- function(k_sig, n = 20, mu = 0, sd = 1) {
