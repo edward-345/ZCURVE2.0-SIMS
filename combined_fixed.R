@@ -83,7 +83,9 @@ chi_500.pvals <- hist(chi_500$pval_list)
 #Situation A,B,C combined, fixed number of significant z-scores
 psi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
                     control_mu = c(0,0), exp_mu = c(0,0), sd = c(1,1)) {
+  
   zscores_psi <- numeric(k_sig)
+  pval_list <- list()
   psi <- 1
   
   while (psi <= k_sig) {
@@ -130,10 +132,12 @@ psi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
     mInt.pval_psi <- min(int_pvaluespsi) 
     
     if (mInt.pval_psi <= 0.05) {
+      pval_list[[length(pval_list) + 1]] <- mInt.pval_psi
       zvalue_psi <- pval_converter(mInt.pval_psi)
       zscores_psi[psi] <- zvalue_psi
       psi <- psi + 1
     } else if (minpval_psi <= 0.05){
+      pval_list[[length(pval_list) + 1]] <- minpval_psi
       zvalue_psi <- pval_converter(minpval_psi)
       zscores_psi[psi] <- zvalue_psi
       psi <- psi + 1
@@ -184,42 +188,47 @@ psi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
       ExmInt_pvalpsi <- min(Extraint_pvaLpsi)
       
       if (ExmInt_pvalpsi <= 0.05) {
+        pval_list[[length(pval_list) + 1]] <- ExmInt_pvalpsi
         extrazvalue_psi <- pval_converter(ExmInt_pvalpsi)
         zscores_psi[psi] <- extrazvalue_psi
         psi <- psi+1
       } else if (Exmin_pvalpsi <= 0.05) {
+        pval_list[[length(pval_list) + 1]] <- Exmin_pvalpsi
         extrazvalue_psi <- pval_converter(Exmin_pvalpsi)
         zscores_psi[psi] <- extrazvalue_psi
         psi <- psi+1
+      } else {
+        pval_list[[length(pval_list) + 1]] <- min(Exmin_pvalpsi,ExmInt_pvalpsi)
       }
       
     }}
   
   fit_psi <- zcurve(zscores_psi, control = list(parallel = TRUE))
-  plot(fit_psi, CI = TRUE, annotation = TRUE, main = "Scenario Psi")
-  psi_plot <- recordPlot()
+  pval_list <- unlist(pval_list)
   
   psi_list <- list(fit_psi = fit_psi,
-                    psi_plot = psi_plot)
+                    pval_list = pval_list)
   
   return(psi_list)
 }
 
 psi_500 <- psi_sim(500)
 summary(psi_500$fit_psi)
+psi_500.plot <- plot(psi_500$fit_psi,
+                     CI = TRUE, annotation = TRUE, main = "Scenario Psi")
 
-psi_alt <- psi_sim(500, exp_mu = c(0.2, 0.2))
-summary(psi_alt$fit_psi)
-
-psi_alt_strong <- psi_sim(500, exp_mu = c(0.8, 0.8))
-summary(psi_alt_strong$fit_psi)
-
+psi_500.pvalModel <- zcurve(p = psi_500$pval_list,
+                            control = list(parallel = TRUE))
+psi_500.pvalPlot <- plot(psi_500.pvalModel,
+                         CI = TRUE, annotation = TRUE, main = "Scenario Psi")
+psi_500.pvals <- hist(psi_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation A,B,C,D combined, fixed number of significant z-scores
 zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
                      mu = 0, sd = c(1,1)) {
   
   zscores_zeta <- numeric(k_sig)
+  pval_list <- list()
   zeta <- 1
   
   mu_conditions <- list(low = c(-mu, -mu),
@@ -293,11 +302,13 @@ zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
     mInt_pvaluezeta <- min(int_pvalueszeta)
     
     if (mInt_pvaluezeta <= 0.05) {
+      pval_list[[length(pval_list) + 1]] <- mInt_pvaluezeta
       zvalue_zeta <- pval_converter(mInt_pvaluezeta)
       zscores_zeta[zeta] <- zvalue_zeta
       zeta <- zeta + 1
     } else if (min_pvaluezeta <= 0.05){
       #"if the effect of condition was significant in any of these analyses"
+      pval_list[[length(pval_list) + 1]] <- min_pvaluezeta
       zvalue_zeta <- pval_converter(min_pvaluezeta)
       zscores_zeta[zeta] <- zvalue_zeta
       zeta <- zeta + 1
@@ -374,35 +385,42 @@ zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
       ExMInt_pvaluezeta <- min(extraInt_pvalzeta)
       
       if (ExMInt_pvaluezeta <= 0.05) {
+        pval_list[[length(pval_list) + 1]] <- ExMInt_pvaluezeta
         zvalue_zeta <- pval_converter(ExMInt_pvaluezeta)
         zscores_zeta[zeta] <- zvalue_zeta
         zeta <- zeta + 1
       } else if (ExMin_pvaluezeta <= 0.05) {
+        pval_list[[length(pval_list) + 1]] <- ExMin_pvaluezeta
         #"if the effect of condition was significant in any of these analyses"
         zvalue_zeta <- pval_converter(ExMin_pvaluezeta)
         zscores_zeta[zeta] <- zvalue_zeta
         zeta <- zeta + 1
+      } else {
+        pval_list[[length(pval_list) + 1]] <- min(ExMin_pvaluezeta,
+                                                  ExMInt_pvaluezeta) 
       }
     }
   }
   
   fit_zeta <- zcurve(zscores_zeta, control = list(parallel = TRUE))
-  plot(fit_zeta, CI = TRUE, annotation = TRUE, main = "Scenario Zeta")
-  zeta_plot <- recordPlot()
+  pval_list <- unlist(pval_list)
   
   zeta_list <- list(fit_zeta = fit_zeta, 
-                    zeta_plot = zeta_plot)
+                    pval_list = pval_list)
+  
   return(zeta_list)
 }
 
 zeta_500 <- zeta_sim(500)
 summary(zeta_500$fit_zeta)
+zeta_500.plot <- plot(zeta_500$fit_zeta,
+                      CI = TRUE, annotation = TRUE, main = "Scenario Zeta")
 
-zeta_alt <- zeta_sim(500, mu = 0.2)
-summary(zeta_alt$fit_zeta)
-
-zeta_alt_strong <- zeta_sim(500, mu = 0.8)
-summary(zeta_alt_strong$fit_zeta)
+zeta_500.pvalModel <- zcurve(p = zeta_500$pval_list,
+                            control = list(parallel = TRUE))
+zeta_500.pvalPlot <- plot(zeta_500.pvalModel,
+                         CI = TRUE, annotation = TRUE, main = "Scenario Zeta")
+zeta_500.pvals <- hist(zeta_500$pval_list)
 
 
 
