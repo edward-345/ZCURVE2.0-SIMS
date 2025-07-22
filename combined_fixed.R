@@ -6,6 +6,9 @@ library(ggplot2)
 source("helper_functions.R")
 set.seed(666)
 
+#ZCURVE3.0 Imports
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
 #----------------------------------------------
 #Situation A,B combined, fixed number of significant z-scores
 chi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,  
@@ -69,16 +72,6 @@ chi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
   return(chi_list)
 }
 
-chi_500 <- chi_sim(500)
-summary(chi_500$fit_chi)
-chi_500.plot <- plot(chi_500$fit_chi,
-                     CI = TRUE, annotation = TRUE, main = "Scenario Chi")
-
-chi_500.pvalModel <- zcurve(p = chi_500$pval_list,
-                              control = list(parallel = TRUE))
-chi_500.pvalPlot <- plot(chi_500.pvalModel,
-                           CI = TRUE, annotation = TRUE, main = "Scenario Chi")
-chi_500.pvals <- hist(chi_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation A,B,C combined, fixed number of significant z-scores
 psi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
@@ -212,16 +205,6 @@ psi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
   return(psi_list)
 }
 
-psi_500 <- psi_sim(500)
-summary(psi_500$fit_psi)
-psi_500.plot <- plot(psi_500$fit_psi,
-                     CI = TRUE, annotation = TRUE, main = "Scenario Psi")
-
-psi_500.pvalModel <- zcurve(p = psi_500$pval_list,
-                            control = list(parallel = TRUE))
-psi_500.pvalPlot <- plot(psi_500.pvalModel,
-                         CI = TRUE, annotation = TRUE, main = "Scenario Psi")
-psi_500.pvals <- hist(psi_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation A,B,C,D combined, fixed number of significant z-scores
 zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
@@ -411,16 +394,7 @@ zeta_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
   return(zeta_list)
 }
 
-zeta_500 <- zeta_sim(500)
-summary(zeta_500$fit_zeta)
-zeta_500.plot <- plot(zeta_500$fit_zeta,
-                      CI = TRUE, annotation = TRUE, main = "Scenario Zeta")
-
-zeta_500.pvalModel <- zcurve(p = zeta_500$pval_list,
-                            control = list(parallel = TRUE))
-zeta_500.pvalPlot <- plot(zeta_500.pvalModel,
-                         CI = TRUE, annotation = TRUE, main = "Scenario Zeta")
-zeta_500.pvals <- hist(zeta_500$pval_list)
+#-------------------------------------------------------------------------------
 
 
 

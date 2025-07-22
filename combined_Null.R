@@ -1,9 +1,15 @@
-source("pHacking_Null.R")
+library(zcurve)
+library(faux)
+library(truncnorm)
+library(tidyverse)
+library(ggplot2)
 source("helper_functions.R")
 library(tidyverse)
+set.seed(666)
 
-#Number of simulations
-#k_sims <- 15000
+#ZCURVE3.0 Imports
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
 #----------------------------------------------
 #SITUATIONS A,B COMBINED
 X_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,  
@@ -74,7 +80,6 @@ X_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
   return(X_list)
 }
 
-X_500 <- X_sim(500)
 #----------------------------------------------
 #SITUATIONS A,B,C COMBINED
 Y_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
@@ -211,7 +216,6 @@ Y_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
   return(Y_list)
 }
 
-Y_500 <- Y_sim(500)
 #----------------------------------------------
 #SITUATIONS A,B,C,D COMBINED
 Z_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
@@ -402,13 +406,4 @@ Z_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
   return(Z_list)
 }
 
-Z_500 <- Z_sim(500)
-
-
-
-
-
-
-
-
-
+#-------------------------------------------------------------------------------

@@ -6,6 +6,9 @@ library(ggplot2)
 source("helper_functions.R")
 set.seed(666)
 
+#ZCURVE3.0 Imports
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
 #----------------------------------------------
 #SITUATION ALPHA: Two DVs for each observation
 alpha_sim <- function(k_sig, n = 20, r = 0.5, 
@@ -52,17 +55,6 @@ alpha_sim <- function(k_sig, n = 20, r = 0.5,
   return(alpha_list)
 }
 
-# 500 studies under null hypothesis, both groups come from N(0,1)
-alpha_500 <- alpha_sim(500)
-summary(alpha_500$fit_alpha)
-alpha_500.plot <- plot(alpha_500$fit_alpha,
-                       CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
-
-alpha_500.pvalModel <- zcurve(p = alpha_500$pval_list,
-                             control = list(parallel = TRUE))
-alpha_500.pvalPlot <- plot(alpha_500.pvalModel,
-                          CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
-alpha_500.pvals <- hist(alpha_500$pval_list)
 #-------------------------------------------------------------------------------
 #SITUATION BETA: Optional Stopping
 beta_sim <- function(k_sig, n = 20, extra_n = 10,
@@ -116,17 +108,6 @@ beta_sim <- function(k_sig, n = 20, extra_n = 10,
   return(beta_list)
 }
 
-# 500 studies under null hypothesis, both groups come from N(0,1)
-beta_500 <- beta_sim(500)
-summary(beta_500$fit_beta)
-beta_500.plot <- plot(beta_500$fit_beta,
-                      CI = TRUE, annotation = TRUE, main = "Scenario Beta")
-
-beta_500.pvalModel <- zcurve(p = beta_500$pval_list,
-                             control = list(parallel = TRUE))
-beta_500.pvalPlot <- plot(beta_500.pvalModel,
-                          CI = TRUE, annotation = TRUE, main = "Scenario Beta")
-beta_500.pvals <- hist(beta_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation Gamma: Main effect or interaction term ANCOVAs
 gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
@@ -199,17 +180,6 @@ gamma_sim <- function(k_sig, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   return(gamma_list)
 }
 
-#Null hypothesis
-gamma_500 <- gamma_sim(500)
-summary(gamma_500$fit_gamma)
-gamma_500.plot <- plot(gamma_500$fit_gamma,
-                       CI = TRUE, annotation = TRUE, main = "Scenario Gamma")
-
-gamma_500.pvalModel <- zcurve(p = gamma_500$pval_list,
-                             control = list(parallel = TRUE))
-gamma_500.pvalPlot <- plot(gamma_500.pvalModel,
-                          CI = TRUE, annotation = TRUE, main = "Scenario Gamma")
-gamma_500.pvals <- hist(gamma_500$pval_list)
 #-------------------------------------------------------------------------------
 #Situation Delta: Ordinal test conditions
 delta_sim <- function(k_sig, n = 20, mu = 0, sd = 1) {
@@ -269,16 +239,7 @@ delta_sim <- function(k_sig, n = 20, mu = 0, sd = 1) {
   return(delta_list)
 }
 
-delta_500 <- delta_sim(500)
-summary(delta_500$fit_delta)
-delta_500.plot <- plot(delta_500$fit_delta,
-                       CI = TRUE, annotation = TRUE, main = "Scenario Delta")
-
-delta_500.pvalModel <- zcurve(p = delta_500$pval_list,
-                              control = list(parallel = TRUE))
-delta_500.pvalPlot <- plot(delta_500.pvalModel,
-                           CI = TRUE, annotation = TRUE, main = "Scenario Delta")
-delta_500.pvals <- hist(delta_500$pval_list)
+#-------------------------------------------------------------------------------
 
 
 

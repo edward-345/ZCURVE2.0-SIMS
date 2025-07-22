@@ -6,8 +6,10 @@ library(ggplot2)
 source("helper_functions.R")
 set.seed(666)
 
-#Number of simulations
-#k_sims <- 15000
+#ZCURVE3.0 Imports
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
+
 #----------------------------------------------
 #General case of Z-Curve under null hypothesis
 #Baseline is a two-condition design with 20 observations per cell (n = 20)
@@ -35,7 +37,6 @@ simulation <- function(k_sims, n) {
   return(summary(fit))
 }
 
-test <- simulation(500, 20)
 #-------------------------------------------------------------------------------
 #SITUATION A: Two DVs for each observation
 A_sim <- function(k_sims, n = 20, r = 0.5, 
@@ -88,10 +89,6 @@ A_sim <- function(k_sims, n = 20, r = 0.5,
   
   return(A_list)
 }
-
-#n = 500 under null hypothesis (false postives)
-A_500 <- A_sim(500)
-
 
 #-------------------------------------------------------------------------------
 #SITUATION B: Optional Stopping
@@ -151,8 +148,6 @@ B_sim <- function(k_sims, n = 20, extra_n = 10,
   
   return(B_list)
 }
-
-B_500 <- B_sim(500)
 
 #-------------------------------------------------------------------------------
 #SITUATION C: Main effect or interaction term ANCOVAs
@@ -232,8 +227,7 @@ C_sim <- function(k_sims, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   
   return(C_list)
 }
- 
-C_500 <- C_sim(500)
+
 #-------------------------------------------------------------------------------
 #SITUATION D: Ordinal test condition
 D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
@@ -297,9 +291,6 @@ D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
   
   return(D_list)
 }
-
-D_500 <- D_sim(500)
-
 
 #-------------------------------------------------------------------------------
 
