@@ -4,6 +4,8 @@ library(truncnorm)
 library(tidyverse)
 library(ggplot2)
 source("helper_functions.R")
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
 set.seed(666)
 
 #Number of simulations
@@ -77,7 +79,7 @@ A_sim <- function(k_sims, n = 20, r = 0.5,
   zscores_A <- zscores_A[1:(A - 1)]
   
   fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
-
+  
   A_list <- list(fit_A = fit_A,
                  pvalues_scenarioA = pvalues_scenarioA)
   
@@ -85,9 +87,18 @@ A_sim <- function(k_sims, n = 20, r = 0.5,
 }
 
 #n = 500 under null hypothesis (false postives)
-A_500 <- A_sim(500)
-A_plot <- plot(A_500.plot$fit_A,
-               CI = TRUE, annotation = TRUE, main = "Scenario A")()
+A_500 <- A_sim(500, n = 40, exp_mu = c(0.4, 0.4))
+A_plot <- plot(A_500$fit_A,
+               CI = TRUE, annotation = TRUE, main = "Scenario A")
+
+A_500.zscores <- pvect_zvect(A_500$pvalues_scenarioA)
+
+source(zcurve3)
+ymax <- 0.8
+TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+#Int.Beg <- 0
+test_3.0 <- Zing(A_500.zscores) 
 
 #-------------------------------------------------------------------------------
 #SITUATION B: Optional Stopping
@@ -138,14 +149,24 @@ B_sim <- function(k_sims, n = 20, extra_n = 10,
   fit_B <- zcurve(zscores_B, control = list(parallel = TRUE))
   
   B_list <- list(fit_B = fit_B,
-                 pvalues_scenarioB = pvalues_scenarioB)
+                 pvalues_scenarioB = pvalues_scenarioB,
+                 zscores_B = zscores_B)
   
   return(B_list)
 }
 
-B_500 <- B_sim(500)
+B_500 <- B_sim(500, exp_mu = 0.4)
 B_plot <- plot(B_500$fit_B,
                CI = TRUE, annotation = TRUE, main = "Scenario B")
+
+B_500.zscores <- pvect_zvect(B_500$pvalues_scenarioB)
+
+ymax <- 0.8
+TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+Int.Beg <- 0
+test_3.0 <- Zing(B_500.zscores) 
+
 #-------------------------------------------------------------------------------
 #SITUATION C: Main effect or interaction term ANCOVAs
 C_sim <- function(k_sims, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
@@ -213,19 +234,24 @@ C_sim <- function(k_sims, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   zscores_C <- zscores_C[1:(C - 1)]
   
   fit_C <- zcurve(zscores_C, control = list(parallel = TRUE))
-  plot(fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
-  C_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_C <- sig_pvalues(pvalues_scenarioC)
   
   C_list <- list(fit_C = fit_C,
-                 C_plot = C_plot,
-                 proportions_C = proportions_C)
+                 pvalues_scenarioC = pvalues_scenarioC)
   
   return(C_list)
 }
- 
+
 C_500 <- C_sim(500)
+C_plot <- plot(C_500$fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
+
+C_500.zscores <- pvect_zvect(C_500$pvalues_scenarioA)
+
+source(zcurve3)
+ymax <- 0.8
+TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+#Int.Beg <- 0
+test_3.0 <- Zing(C_500.zscores)
 #-------------------------------------------------------------------------------
 #SITUATION D: Ordinal test condition
 D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
@@ -291,17 +317,3 @@ D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
 }
 
 D_500 <- D_sim(500)
-
-
-#-------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-

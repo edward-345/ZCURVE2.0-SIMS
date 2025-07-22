@@ -47,7 +47,8 @@ alpha_sim <- function(k_sig, n = 20, r = 0.5,
   pval_list <- unlist(pval_list)
   
   alpha_list <- list(fit_alpha = fit_alpha,
-                     pval_list = pval_list)
+                     pval_list = pval_list,
+                     zscores_alpha = zscores_alpha)
   
   return(alpha_list)
 }
@@ -63,6 +64,18 @@ alpha_500.pvalModel <- zcurve(p = alpha_500$pval_list,
 alpha_500.pvalPlot <- plot(alpha_500.pvalModel,
                           CI = TRUE, annotation = TRUE, main = "Scenario Alpha")
 alpha_500.pvals <- hist(alpha_500$pval_list)
+
+
+alpha_1000 <- alpha_sim(1000, n = 40, exp_mu = c(0.4,0.4), r = 0)
+ymax <- 0.8
+TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+Int.Beg <- 2.6
+#test_3.0 <- Zing(alpha_1000$zscores_alpha)
+
+pvals_alpha1000 <- pvect_zvect(alpha_1000$pval_list)
+test_3.0_alpha <- Zing(pvals_alpha1000)
+
 #-------------------------------------------------------------------------------
 #SITUATION BETA: Optional Stopping
 beta_sim <- function(k_sig, n = 20, extra_n = 10,

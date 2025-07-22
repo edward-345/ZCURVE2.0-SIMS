@@ -55,6 +55,14 @@ pval_converter <- function(p_val) {
   return(abs(qnorm(p_val/2, lower.tail = FALSE)))
 }
 
+#Convert p-values to z-scores
+pvect_zvect <- function(pvals) {
+  if (any(pvals < 0 | pvals > 1, na.rm = TRUE)) {
+    stop("All p-values must be between 0 and 1.")
+  }
+  qnorm(1 - pvals/2)
+}
+
 #Situation C t-test and ANCOVA model
 sitC_tests <- function(dataset) {
   #Results for Situation C were obtained by conducting a t-test...
