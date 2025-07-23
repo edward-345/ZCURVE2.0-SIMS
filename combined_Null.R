@@ -68,14 +68,9 @@ X_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
   zscores_X <- zscores_X[1:(X - 1)]
   
   fit_X <- zcurve(zscores_X, control = list(parallel = TRUE))
-  plot(fit_X, CI = TRUE, annotation = TRUE, main = "Scenario A+B")
-  X_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_X <- sig_pvalues(pvalues_scenarioX)
   
   X_list <- list(fit_X = fit_X,
-                 X_plot = X_plot,
-                 proportions_X = proportions_X)
+                 pvalues_scenarioX = pvalues_scenarioX)
   
   return(X_list)
 }
@@ -204,14 +199,9 @@ Y_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
   zscores_Y <- zscores_Y[1:(Y - 1)]
   
   fit_Y <- zcurve(zscores_Y, control = list(parallel = TRUE))
-  plot(fit_Y, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C")
-  Y_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_Y <- sig_pvalues(pvalues_scenarioY)
   
   Y_list <- list(fit_Y = fit_Y,
-                 Y_plot = Y_plot,
-                 proportions_Y = proportions_Y)
+                 pvalues_scenarioY = pvalues_scenarioY)
   
   return(Y_list)
 }
@@ -394,14 +384,9 @@ Z_sim <- function(k_sims, n = 20, extra_n = 10, r = 0.5,
   zscores_Z <- zscores_Z[1:(Z - 1)]
   
   fit_Z <- zcurve(zscores_Z, control = list(parallel = TRUE))
-  plot(fit_Z, CI = TRUE, annotation = TRUE, main = "Scenario A+B+C+D")
-  Z_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_Z <- sig_pvalues(pvalues_scenarioZ)
   
   Z_list <- list(fit_Z = fit_Z,
-                 Z_plot = Z_plot,
-                 proportions_Z = proportions_Z)
+                 pvalues_scenarioZ = pvalues_scenarioZ)
   
   return(Z_list)
 }
