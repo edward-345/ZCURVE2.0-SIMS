@@ -37,6 +37,7 @@ simulation <- function(k_sims, n) {
   return(summary(fit))
 }
 
+
 #-------------------------------------------------------------------------------
 #SITUATION A: Two DVs for each observation
 A_sim <- function(k_sims, n = 20, r = 0.5, 
@@ -44,7 +45,7 @@ A_sim <- function(k_sims, n = 20, r = 0.5,
   zscores_A <- numeric(k_sims)
   A <- 1
   
-  #Vector of all 15,000 p-values generated
+  #Vector of all p-values generated
   pvalues_scenarioA <- numeric(k_sims)
   
   for (i in 1:k_sims) {
@@ -78,14 +79,9 @@ A_sim <- function(k_sims, n = 20, r = 0.5,
   zscores_A <- zscores_A[1:(A - 1)]
   
   fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
-  plot(fit_A, CI = TRUE, annotation = TRUE, main = "Scenario A")
-  A_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_A <- sig_pvalues(pvalues_scenarioA)
   
   A_list <- list(fit_A = fit_A,
-                 A_plot = A_plot,
-                 proportions_A = proportions_A)
+                 pvalues_scenarioA = pvalues_scenarioA)
   
   return(A_list)
 }
@@ -137,14 +133,9 @@ B_sim <- function(k_sims, n = 20, extra_n = 10,
   zscores_B <- zscores_B[1:(B - 1)]
   
   fit_B <- zcurve(zscores_B, control = list(parallel = TRUE))
-  plot(fit_B, CI = TRUE, annotation = TRUE, main = "Scenario B")
-  B_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_B <- sig_pvalues(pvalues_scenarioB)
   
   B_list <- list(fit_B = fit_B,
-                 B_plot = B_plot,
-                 proportions_B = proportions_B)
+                 pvalues_scenarioB = pvalues_scenarioB)
   
   return(B_list)
 }
@@ -216,14 +207,9 @@ C_sim <- function(k_sims, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   zscores_C <- zscores_C[1:(C - 1)]
   
   fit_C <- zcurve(zscores_C, control = list(parallel = TRUE))
-  plot(fit_C, CI = TRUE, annotation = TRUE, main = "Scenario C")
-  C_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_C <- sig_pvalues(pvalues_scenarioC)
   
   C_list <- list(fit_C = fit_C,
-                 C_plot = C_plot,
-                 proportions_C = proportions_C)
+                 pvalues_scenarioC = pvalues_scenarioC)
   
   return(C_list)
 }
@@ -280,14 +266,9 @@ D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
   zscores_D <- zscores_D[1:(D - 1)]
   
   fit_D <- zcurve(zscores_D, control = list(parallel = TRUE))
-  plot(fit_D, CI = TRUE, annotation = TRUE, main = "Scenario D")
-  D_plot <- recordPlot()
-  #Note that the proportion of p-values align with Simmons et al., 2011
-  proportions_D <- sig_pvalues(pvalues_scenarioD)
   
   D_list <- list(fit_D = fit_D,
-                 D_plot = D_plot,
-                 proportions_D = proportions_D)
+                 pvalues_scenarioD = pvalues_scenarioD)
   
   return(D_list)
 }
