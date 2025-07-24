@@ -6,6 +6,8 @@ source("combined_fixed.R")
 #-------------------------------------------------------------------------------
 # FIXED NUMBER OF TESTS
 #-------------------------------------------------------------------------------
+
+#Default setting (no p-hacking)
 sim_null <- simulation(5000)
 summary(sim_null$fit)
 sim_null.plot <- plot(sim_null$fit,
