@@ -6,6 +6,24 @@ source("combined_fixed.R")
 #-------------------------------------------------------------------------------
 # FIXED NUMBER OF TESTS
 #-------------------------------------------------------------------------------
+sim_null <- simulation(5000)
+summary(sim_null$fit)
+sim_null.plot <- plot(sim_null$fit,
+                    CI = TRUE, annotation = TRUE,
+                    main = "Default under Null Hypothesis")
+
+sim_null.pvals <- zcurve(p = sim_null$pvals,
+                       control = list(parallel = TRUE))
+sim_null.pvals.plot <- plot(sim_null.pvals, ymax = 10,
+                          CI = TRUE, annotation = TRUE,
+                          main = "Default P-vals under Null Hypothesis")
+# ZCURVE 3.0
+ymax <- 0.8
+TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+sim_null.3.0 <- Zing(pval_converter(sim_null$pvals))
+
+#----------------------------------------------
 
 A_null <- A_sim(5000)
 summary(A_null$fit_A)

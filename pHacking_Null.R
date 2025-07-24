@@ -13,9 +13,10 @@ source(zcurve3)
 #----------------------------------------------
 #General case of Z-Curve under null hypothesis
 #Baseline is a two-condition design with 20 observations per cell (n = 20)
-simulation <- function(k_sims, n) {
+simulation <- function(k_sims, n = 20) {
   z_scores <- numeric(k_sims)
   j <- 1
+  pvals <- numeric(k_sims)
   for (i in 1:k_sims) {
     #Standard normal distribution N(0,1) since false positive occurs under null
     control_group <- rnorm(n, mean = 0, sd = 1)
@@ -26,15 +27,21 @@ simulation <- function(k_sims, n) {
     z_value <- pval_converter(p_value)
     
     if (abs(z_value) >= qnorm(0.975)) {
+      pvals[i] <- p_value
       z_scores[j] <- z_value
       j <- j + 1
+    } else {
+      pvals[i] <- p_value
     }
   }
   
   z_scores <- z_scores[1:(j - 1)]
   fit <- zcurve(z_scores, control = list(parallel = TRUE))
-  #sim_plot <- plot(fit, CI = TRUE, annotation = TRUE, main = "Simulation under Null")
-  return(summary(fit))
+  
+  sim_list <- list(fit = fit,
+                   z_scores = z_scores,
+                   pvals = pvals)
+  return(sim_list)
 }
 
 
