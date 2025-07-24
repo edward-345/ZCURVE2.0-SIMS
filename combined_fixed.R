@@ -67,6 +67,7 @@ chi_sim <- function(k_sig, n = 20, extra_n = 10, r = 0.5,
   pval_list <- unlist(pval_list)
   
   chi_list <- list(fit_chi = fit_chi,
+                   zscores_chi = zscores_chi,
                     pval_list = pval_list)
   
   return(chi_list)

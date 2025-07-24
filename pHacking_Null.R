@@ -81,6 +81,7 @@ A_sim <- function(k_sims, n = 20, r = 0.5,
   fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
   
   A_list <- list(fit_A = fit_A,
+                 zscores_A = zscores_A,
                  pvalues_scenarioA = pvalues_scenarioA)
   
   return(A_list)
@@ -135,6 +136,7 @@ B_sim <- function(k_sims, n = 20, extra_n = 10,
   fit_B <- zcurve(zscores_B, control = list(parallel = TRUE))
   
   B_list <- list(fit_B = fit_B,
+                 zscores_B = zscores_B,
                  pvalues_scenarioB = pvalues_scenarioB)
   
   return(B_list)
@@ -209,6 +211,7 @@ C_sim <- function(k_sims, n = 20, control_mu = 0, exp_mu = 0, sd = 1) {
   fit_C <- zcurve(zscores_C, control = list(parallel = TRUE))
   
   C_list <- list(fit_C = fit_C,
+                 zscores_C = zscores_C,
                  pvalues_scenarioC = pvalues_scenarioC)
   
   return(C_list)
@@ -268,6 +271,7 @@ D_sim <- function(k_sims, n = 20, mu = 0, sd = 1) {
   fit_D <- zcurve(zscores_D, control = list(parallel = TRUE))
   
   D_list <- list(fit_D = fit_D,
+                 zscores_D = zscores_D, 
                  pvalues_scenarioD = pvalues_scenarioD)
   
   return(D_list)
