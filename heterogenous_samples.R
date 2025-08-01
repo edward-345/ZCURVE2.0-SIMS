@@ -16,6 +16,7 @@ random_mean <- function(x) {
   return(exp_mean)
 }
 
+# Function for returning heterogeneity estimates from TEST4HETEROGENEITY
 het_estimates <- function(x) {
   het_test_results <- list(het_25 = x[2, 4],
                            het_median = x[7, 4],

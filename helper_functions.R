@@ -1,3 +1,15 @@
+library(zcurve)
+library(faux)
+library(truncnorm)
+library(tidyverse)
+library(ggplot2)
+set.seed(666)
+
+#ZCURVE3.0 Imports
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
+
+#----------------------------------------------
 #Run 3 t tests
 sitA_ttests <- function(ctrl1, ctrl2, exp1, exp2) {
   p1 <- t.test(ctrl1, exp1, var.equal = TRUE)$p.value
@@ -7,6 +19,22 @@ sitA_ttests <- function(ctrl1, ctrl2, exp1, exp2) {
   p3 <- t.test(avg_ctrl, avg_exp, var.equal = TRUE)$p.value
   return(c(p1, p2, p3))
 }
+
+#T-Tests for multiple covariates
+multivar_ttests <- function(control, exp) {
+  
+  pvals <- numeric(ncol(control))
+  
+  for (i in 1:ncol(control)) {
+    pvals[i] <- t.test(control[,i], exp[,i], var.equal = TRUE)$p.value
+  }
+  avg_pval <- t.test(rowMeans(control), rowMeans(exp), var.equal = TRUE)$p.value
+  
+  pvals <- c(pvals, avg_pval)
+  
+  return(pvals)
+}
+
 
 #Distribution of significant p-values
 sig_pvalues <- function(sig_p) {
