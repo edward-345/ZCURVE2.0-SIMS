@@ -25,15 +25,17 @@ het_estimates <- function(x) {
 
 #-------------------------------------------------------------------------------
 
-het_sim <- function(k_sims, n = 20) {
+het_sim <- function(k_sims, n = 100) {
   z_scores <- numeric(k_sims)
   j <- 1
   pvals <- numeric(k_sims)
+  exp_mean_set <- rep(seq(0,0.8, 0.8), 2500)
+  
   for (i in 1:k_sims) {
-    exp_mean <- random_mean(round(runif(1, min = 1, max = 4), 0))
+    #exp_mean <- random_mean(round(runif(1, min = 1, max = 5), 0))
     
     control_group <- rnorm(n, mean = 0, sd = 1)
-    exp_group <- rnorm(n, mean = exp_mean, sd = 1)
+    exp_group <- rnorm(n, mean = exp_mean_set[i], sd = 1)
     
     result <- t.test(control_group, exp_group, var.equal = TRUE)
     p_value <- result$p.value
@@ -61,16 +63,17 @@ het_trial <- het_sim(5000)
 summary(het_trial$fit)
 het_trial.plot <- plot(het_trial$fit,
                       CI = TRUE, annotation = TRUE,
-                      main = "Heterogenous under Null Hypothesis")
+                      main = "Heterogenous under Null Hypothesis (New)")
 
 het_trial.pvals <- zcurve(p = het_trial$pvals,
                          control = list(parallel = TRUE))
 het_trial.pvals.plot <- plot(het_trial.pvals, ymax = 10,
                             CI = TRUE, annotation = TRUE,
-                            main = "Heterogenous P-vals under Null Hypothesis")
+                            main = "Heterogenous P-vals under Null Hypothesis (New)")
 # ZCURVE 3.0
-ymax <- 0.8
-TEST4HETEROGENEITY <- 500
+source(zcurve3)
+ymax <- 1.2
+TEST4HETEROGENEITY <- 150
 TEST4BIAS <- TRUE
 het_trial.3.0 <- Zing(pval_converter(het_trial$pvals))
 het_estimates(het_trial.3.0$fit.comp)
