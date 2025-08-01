@@ -129,9 +129,49 @@ TEST4HETEROGENEITY <- 0
 TEST4BIAS <- TRUE
 multi4_3.0 <- Zing(pval_converter(multi4$pvalues_scenarioA))
 
+#----------------------------------------------
+# 5 Dependent Variables
+multi5 <- multivar_sim(5000, control_mu = c(0,0,0,0,0), exp_mu = c(0,0,0,0,0))
+summary(multi5$fit_A)
+multi5.plot <- plot(multi5$fit_A,
+                    CI = TRUE, annotation = TRUE,
+                    main = "5 DVs under Null Hypothesis")
 
+multi5.pvals <- zcurve(p = multi5$pvalues_scenarioA,
+                       control = list(parallel = TRUE))
+summary(multi5.pvals)
+multi5.pvals.plot <- plot(multi5.pvals, ymax = 10,
+                          CI = TRUE, annotation = TRUE,
+                          main = "5DVs P-vals under Null Hypothesis")
+# ZCURVE 3.0
+source(zcurve3)
+ymax <- 1.2
+TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+multi5_3.0 <- Zing(pval_converter(multi5$pvalues_scenarioA))
 
+#----------------------------------------------
+# 5 Dependent Variables with Fixed
+multi5_fixed <- multivar_fixed(5000,
+                               control_mu = c(0,0,0,0,0),
+                               exp_mu = c(0,0,0,0,0))
+summary(multi5_fixed$fit_A)
+multi5.plot <- plot(multi5_fixed$fit_A,
+                    CI = TRUE, annotation = TRUE,
+                    main = "5 DVs under Null Hypothesis (Fixed)")
 
+multi5.pvals <- zcurve(p = multi5_fixed$pvals,
+                       control = list(parallel = TRUE))
+summary(multi5.pvals)
+multi5.pvals.plot <- plot(multi5.pvals, ymax = 10,
+                          CI = TRUE, annotation = TRUE,
+                          main = "5DVs P-vals under Null Hypothesis")
+# ZCURVE 3.0
+source(zcurve3)
+ymax <- 1.2
+TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+multi5_fixed.3.0 <- Zing(pval_converter(multi5_fixed$pvals))
 
 
 
