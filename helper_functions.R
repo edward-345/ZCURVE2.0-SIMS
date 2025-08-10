@@ -117,9 +117,67 @@ zeta_mu_assign <- function(g, mu_conditions, sd, r) {
               varnames=c("DV1","DV2"))
 }
 
+# True EDR and ERR
+true_parameters <- function(n, alpha = .05,
+                            pop.es=numeric(5), wgt=c(0.2,0.2,0.2,0.2,0.2)) {
+  N <- 2*n
+  se <- 2/sqrt(N)
+  
+  nct = pop.es/se
+  p = 1-(alpha/2)
+  
+  pow.pos <- pt(qt(p,N-2),N-2,nct,lower.tail=FALSE)
+  pow.neg <- pt(-qt(p,N-2),N-2,nct,lower.tail=TRUE)
+  pow <- pow.pos + pow.neg
+  
+  true.edr <- sum(pow*wgt)
+  
+  w.sig <- wgt*pow
+  w.sig <- w.sig/sum(w.sig)
+  
+  true.err <- sum(pow*w.sig)
+  
+  true_parameters <- c(true.edr, true.err)
+  
+  return(true_parameters)
+}
 
+true_edr <- function(n, alpha = .05,
+                     pop.es=numeric(5), wgt=c(0.2,0.2,0.2,0.2,0.2)) {
+  N <- 2*n
+  se <- 2/sqrt(N)
+  
+  nct = pop.es/se
+  p = 1-(alpha/2)
+  
+  pow.pos <- pt(qt(p,N-2),N-2,nct,lower.tail=FALSE)
+  pow.neg <- pt(-qt(p,N-2),N-2,nct,lower.tail=TRUE)
+  pow <- pow.pos + pow.neg
+  
+  true.edr <- sum(pow*wgt)
 
+  return(true.edr)
+}
 
+true_err <- function(n, alpha = .05,
+                     pop.es=numeric(5), wgt=c(0.2,0.2,0.2,0.2,0.2)) {
+  N <- 2*n
+  se <- 2/sqrt(N)
+  
+  nct = pop.es/se
+  p = 1-(alpha/2)
+  
+  pow.pos <- pt(qt(p,N-2),N-2,nct,lower.tail=FALSE)
+  pow.neg <- pt(-qt(p,N-2),N-2,nct,lower.tail=TRUE)
+  pow <- pow.pos + pow.neg
+  
+  w.sig <- wgt*pow
+  w.sig <- w.sig/sum(w.sig)
+  
+  true.err <- sum(pow*w.sig)
+  
+  return(true.err)
+}
 
 
 
