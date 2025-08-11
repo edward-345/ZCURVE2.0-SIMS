@@ -5,7 +5,7 @@ source('MultiVar_sims.R')
 # Behavior as n increases
 #-------------------------------------------------------------------------------
 # Sequence of n values
-n_vals <- seq(10, 100, by = 10)
+n_vals <- seq(20, 100, by = 10)
 
 # Under Null Hypothesis
 # Simulated EDRs
@@ -351,7 +351,7 @@ incr_trueEDR.ht.n <- tibble(
     true_edr(
       n = n,
       alpha = .05,
-      pop.es = c(0.2,0.4,0.6,0.8,1),
+      pop.es = c(0, 0.2,0.4,0.6,0.8),
       wgt = rep(0.2, 5)
     )
   ),
