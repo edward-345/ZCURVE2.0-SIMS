@@ -11,6 +11,8 @@ multivar_sim <- function(k_sims, n = 20, r = 0.5,
   #Vector of all p-values generated
   pvalues_scenarioA <- numeric(k_sims)
   
+  id <- c()
+  
   for (i in 1:k_sims) {
     st.d <- rep(sd, times = length(control_mu))
     
@@ -26,6 +28,7 @@ multivar_sim <- function(k_sims, n = 20, r = 0.5,
     pvalues_scenarioA[i] <- min_pvalue
     #Add every p-value
     total_pvals[[length(total_pvals) + length(pvalue_A)]] <- pvalue_A
+    id = c(id, rep(i, (length(control_mu) + 1)))
     
     #If the smallest p-value of the three t-tests is significant at .05, convert 
     #to z-score and add to zscores_A vector
@@ -48,7 +51,8 @@ multivar_sim <- function(k_sims, n = 20, r = 0.5,
                  zscores_A = zscores_A,
                  pvalues_scenarioA = pvalues_scenarioA,
                  total_pvals = total_pvals,
-                 total_zscores = total_zscores)
+                 total_zscores = total_zscores,
+                 id = id)
   
   return(A_list)
 }

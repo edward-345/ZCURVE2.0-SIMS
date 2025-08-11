@@ -78,25 +78,23 @@ err_3 <- function(k_sims, n = 20, r = 0.5,
   return(err)
 }
 
-
-
 #-------------------------------------------------------------------------------
 # ZCURVE3 GLOBAL PARAMETERS
 #-------------------------------------------------------------------------------
 source(zcurve3)
-ymax <- 1.3
+ymax <- 0.8
 # TEST4HETEROGENEITY <- 0
 TEST4BIAS <- TRUE
 # Title <- past("title string")
 Est.method <- "EXT"
 # boot.iter <- 500
-ncz <- c(0:6)
+ncz <- c(1.7, 2, 2.25)
 #W.FIXED <- TRUE
 #w.fix   <- 
 # Component locations (z-values at which densities are centered)
-components <- length(ncz)           # Number of components
-zsd <- 0.5                            # SD of standard normal z-distribution
-zsds = rep(zsd,components)          # one SD for each component
+#components <- length(ncz)           # Number of components
+#zsd <- 1                           # SD of standard normal z-distribution
+#zsds = rep(zsd,components)          # one SD for each component
 # Int.Beg <- 1.96
 # Int.End <- 6
 #-------------------------------------------------------------------------------
@@ -159,7 +157,7 @@ hom_truERR.n <- sapply(n_vals, function(n)
     pop.es = rep(0.6, 5),
     wgt = c(1,0,0,0,0)))
 #-------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 # HETEROGENEOUS ES = [0, .2, .4, .6, .8]
 het_sim.n_20 <- multivar_sim(k_sims = 1000, n = 20,
                              control_mu = rep(0, 5),
@@ -525,6 +523,12 @@ hom_sim.n_20 <- multivar_sim(k_sims = 1000, n = 20,
                              exp_mu = rep(0.6, 5))
 hom_model.n_20 <- Zing(hom_sim.n_20$zscores_A)
 hom_tru.model.n_20 <- Zing(hom_sim.n_20$total_zscores)
+
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
+Est.Method <- "CLU"
+boot.iter <- 100
+hom_cluster.model.n_20 <- Zing(hom_sim.n_20$total_zscores, hom_sim.n_20$id)
 
 hom_sim.n_30 <- multivar_sim(k_sims = 1000, n = 30,
                              control_mu = rep(0, 5),
