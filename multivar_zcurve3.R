@@ -83,16 +83,20 @@ err_3 <- function(k_sims, n = 20, r = 0.5,
 #-------------------------------------------------------------------------------
 # ZCURVE3 GLOBAL PARAMETERS
 #-------------------------------------------------------------------------------
+source(zcurve3)
 ymax <- 1.3
 # TEST4HETEROGENEITY <- 0
-# TEST4BIAS <- TRUE
+TEST4BIAS <- TRUE
 # Title <- past("title string")
-# Est.method <- "EXT"
+Est.method <- "EXT"
 # boot.iter <- 500
-# ncz <- 0:6                          # Component locations (z-values at which densities are centered)
-# components <- length(ncz)           # Number of components
-# zsd <- 1                            # SD of standard normal z-distribution
-# zsds = rep(zsd,components)          # one SD for each component
+ncz <- c(0:6)
+#W.FIXED <- TRUE
+#w.fix   <- 
+# Component locations (z-values at which densities are centered)
+components <- length(ncz)           # Number of components
+zsd <- 0.5                            # SD of standard normal z-distribution
+zsds = rep(zsd,components)          # one SD for each component
 # Int.Beg <- 1.96
 # Int.End <- 6
 #-------------------------------------------------------------------------------
@@ -634,6 +638,61 @@ hom_ERR.n_plot <- ggplot(hom_ERR.n_long, aes(x = n, y = ERR, group = Type)) +
 hom_ERR.n_plot
 #-------------------------------------------------------------------------------
 # BEHAVIOR AS r INCREASES
+het_truEDR.r <- rep(true_edr(
+  n = 20,
+  alpha = .05,
+  pop.es = c(0, .2, .4, .6, .8),
+  wgt = rep(0.2, 5)
+), 10)
+
+null_truEDR.r <- rep(true_edr(
+  n = 20,
+  alpha = .05,
+  pop.es = rep(0, 5),
+  wgt = c(1,0,0,0,0)
+), 10)
+
+two_truEDR.r <- rep(true_edr(
+  n = 20,
+  alpha = .05,
+  pop.es = c(0.2, 0.8, 0.2, 0.8, 0.2),
+  wgt = c(0.333,0,0.333,0,0.333)
+), 10)
+
+hom_truEDR.r <- rep(true_edr(
+  n = 20,
+  alpha = .05,
+  pop.es = rep(0.6, 5),
+  wgt = c(1,0,0,0,0)
+), 10)
+
+het_truERR.r <- rep(true_err(
+  n = 20,
+  alpha = .05,
+  pop.es = c(0, .2, .4, .6, .8),
+  wgt = rep(0.2, 5)
+), 10)
+
+null_truERR.r <- rep(true_err(
+  n = 20,
+  alpha = .05,
+  pop.es = rep(0, 5),
+  wgt = c(1,0,0,0,0)
+), 10)
+
+two_truERR.r <- rep(true_err(
+  n = 20,
+  alpha = .05,
+  pop.es = c(0.2, 0.8, 0.2, 0.8, 0.2),
+  wgt = c(0.333,0,0.333,0,0.333)
+), 10)
+
+hom_truERR.r <- rep(true_err(
+  n = 20,
+  alpha = .05,
+  pop.es = rep(0.6, 5),
+  wgt = c(1,0,0,0,0)
+), 10)
 #-------------------------------------------------------------------------------
 # HETEROGENEOUS ES = [0, .2, .4, .6, .8]
 het_sim.r.0 <- multivar_sim(k_sims = 1000, r = 0,
@@ -716,6 +775,50 @@ het_ERR.r <- z3_ERR(list(het_model.r.0,
                          het_model.r.7,
                          het_model.r.8,
                          het_model.r.9))
+
+het_EDR.r_df <- data.frame(r = r_vals,
+                           Simulated = het_EDR.r,
+                           True = het_truEDR.r)
+
+het_EDR.r_long <- het_EDR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "EDR")
+
+het_EDR.r_plot <- ggplot(het_EDR.r_long, aes(x = r, y = EDR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "EDR vs Correlation r (ES = [0, 0.8])",
+       x = "Correlation (r)",
+       y = "Estimated Discovery Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+het_EDR.r_plot
+
+het_ERR.r_df <- data.frame(r = r_vals,
+                           Simulated = het_ERR.r,
+                           True = het_truERR.r)
+
+het_ERR.r_long <- het_ERR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "ERR")
+
+het_ERR.r_plot <- ggplot(het_ERR.r_long, aes(x = r, y = ERR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "ERR vs Correlation r (ES = [0, 0.8])",
+       x = "Correlation (r)",
+       y = "Estimated Replicability Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+het_ERR.r_plot
 
 #-------------------------------------------------------------------------------
 # TRUE NULL ES = [0, 0, 0, 0, 0]
@@ -800,6 +903,50 @@ null_ERR.r <- z3_ERR(list(null_model.r.0,
                          null_model.r.8,
                          null_model.r.9))
 
+null_EDR.r_df <- data.frame(r = r_vals,
+                           Simulated = null_EDR.r,
+                           True = null_truEDR.r)
+
+null_EDR.r_long <- null_EDR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "EDR")
+
+null_EDR.r_plot <- ggplot(null_EDR.r_long, aes(x = r, y = EDR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "EDR vs Correlation r (True Null)",
+       x = "Correlation (r)",
+       y = "Estimated Discovery Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+null_EDR.r_plot
+
+null_ERR.r_df <- data.frame(r = r_vals,
+                           Simulated = null_ERR.r,
+                           True = null_truERR.r)
+
+null_ERR.r_long <- null_ERR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "ERR")
+
+null_ERR.r_plot <- ggplot(null_ERR.r_long, aes(x = r, y = ERR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "ERR vs Correlation r (True Null)",
+       x = "Correlation (r)",
+       y = "Estimated Replicability Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+null_ERR.r_plot
+
 #-------------------------------------------------------------------------------
 # TWO EFFECT SIZES ES = [0.2, 0.8, 0.2, 0.8, 0.2]
 duo_sim.r.0 <- multivar_sim(k_sims = 1000, r = 0,
@@ -883,6 +1030,50 @@ duo_ERR.r <- z3_ERR(list(duo_model.r.0,
                          duo_model.r.8,
                          duo_model.r.9))
 
+two_EDR.r_df <- data.frame(r = r_vals,
+                           Simulated = duo_EDR.r,
+                           True = two_truEDR.r)
+
+two_EDR.r_long <- two_EDR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "EDR")
+
+two_EDR.r_plot <- ggplot(two_EDR.r_long, aes(x = r, y = EDR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "EDR vs Correlation r (ES = 0.2 and 0.8)",
+       x = "Correlation (r)",
+       y = "Estimated Discovery Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+two_EDR.r_plot
+
+two_ERR.r_df <- data.frame(r = r_vals,
+                           Simulated = duo_ERR.r,
+                           True = two_truERR.r)
+
+two_ERR.r_long <- two_ERR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "ERR")
+
+two_ERR.r_plot <- ggplot(two_ERR.r_long, aes(x = r, y = ERR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "ERR vs Correlation r (ES = 0.2 and 0.8)",
+       x = "Correlation (r)",
+       y = "Estimated Replicability Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+two_ERR.r_plot
+
 #-------------------------------------------------------------------------------
 # HOMOGENOUS MED ES = [0.6, 0.6, 0.6, 0.6, 0.6]
 hom_sim.r.0 <- multivar_sim(k_sims = 1000, r = 0,
@@ -965,5 +1156,49 @@ hom_ERR.r <- z3_ERR(list(hom_model.r.0,
                          hom_model.r.7,
                          hom_model.r.8,
                          hom_model.r.9))
+
+hom_EDR.r_df <- data.frame(r = r_vals,
+                           Simulated = hom_EDR.r,
+                           True = hom_truEDR.r)
+
+hom_EDR.r_long <- hom_EDR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "EDR")
+
+hom_EDR.r_plot <- ggplot(hom_EDR.r_long, aes(x = r, y = EDR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "EDR vs Correlation r (Homogenous ES = 0.6)",
+       x = "Correlation (r)",
+       y = "Estimated Discovery Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+hom_EDR.r_plot
+
+hom_ERR.r_df <- data.frame(r = r_vals,
+                           Simulated = hom_ERR.r,
+                           True = hom_truERR.r)
+
+hom_ERR.r_long <- hom_ERR.r_df %>%
+  pivot_longer(cols = c(Simulated, True),
+               names_to = "Type",
+               values_to = "ERR")
+
+hom_ERR.r_plot <- ggplot(hom_ERR.r_long, aes(x = r, y = ERR, group = Type)) +
+  geom_line(aes(linetype = Type)) +
+  geom_point(aes(shape = Type)) +
+  scale_x_continuous(breaks = r_vals) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(title = "ERR vs Correlation r (Homogenous ES = 0.6)",
+       x = "Correlation (r)",
+       y = "Estimated Replicability Rate",
+       linetype = NULL, shape = NULL) +
+  theme_minimal()
+
+hom_ERR.r_plot
 
 #-------------------------------------------------------------------------------
