@@ -179,5 +179,24 @@ true_err <- function(n, alpha = .05,
   return(true.err)
 }
 
+# ZCURVE 3 EDR extract
+z3_EDR <- function(models) {
+  EDR_vals <- numeric(length(models))
+  i <- 1
+  for (i in 1:length(models)) {
+    EDR_vals[i] <- models[[i]]$res['EDR']
+  }
+  return(EDR_vals)
+}
+
+# ZCURVE 3 ERR extract
+z3_ERR <- function(models) {
+  ERR_vals <- numeric(length(models))
+  i <- 1
+  for (i in 1:length(models)) {
+    ERR_vals[i] <- models[[i]]$res['ERR']
+  }
+  return(ERR_vals)
+}
 
 

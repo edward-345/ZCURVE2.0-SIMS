@@ -42,11 +42,13 @@ multivar_sim <- function(k_sims, n = 20, r = 0.5,
   fit_A <- zcurve(zscores_A, control = list(parallel = TRUE))
   
   total_pvals <- unlist(total_pvals)
+  total_zscores <- pval_converter(total_pvals)
   
   A_list <- list(fit_A = fit_A,
                  zscores_A = zscores_A,
                  pvalues_scenarioA = pvalues_scenarioA,
-                 total_pvals = total_pvals)
+                 total_pvals = total_pvals,
+                 total_zscores = total_zscores)
   
   return(A_list)
 }

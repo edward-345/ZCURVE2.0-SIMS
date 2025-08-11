@@ -558,6 +558,52 @@ plot_med.EDR.hm.r <- ggplot(med_EDR.hm.r,
 plot_med.EDR.hm.r
 
 #-------------------------------------------------------------------------------
+# tri effect size
+# Simulated EDRs
+tri_simEDR.hm.r <- tibble(
+  r = r_vals,
+  edr = sapply(r_vals, function(r)
+    edr_m.sim(
+      k_sims = 15000,
+      n = 20,
+      r = r,
+      control_mu = rep(0, 5),
+      exp_mu = c(0.4, 0, 0.8, 0, 0.2),
+      sd = 1
+    )
+  ),
+  type = "Simulated"
+)
+
+# True EDRs
+tri_trueEDR.hm.r <- tibble(
+  r = r_vals,
+  edr = rep(true_edr(
+    n = 20,
+    alpha = .05,
+    pop.es = c(0.4, 0, 0.8, 0, 0.2),
+    wgt = c(0.333,0,0.333,0,0.333)
+  ), length(r_vals)),
+  type = "Theoretical"
+)
+
+tri_EDR.hm.r <- bind_rows(tri_simEDR.hm.r, tri_trueEDR.hm.r)
+
+plot_tri.EDR.hm.r <- ggplot(tri_EDR.hm.r,
+                            aes(x = r, y = edr, color = type)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "EDR vs Correlation r ES=0.2,0.4,0.8",
+    x = "Correlation between DVs r = [0, 1]",
+    y = "EDR",
+    color = "Curve type"
+  ) +
+  scale_color_manual(values = c(Simulated = "blue", Theoretical = "red"))
+
+plot_tri.EDR.hm.r
+
+#-------------------------------------------------------------------------------
 # Under Null Hypothesis
 # Simulated ERRs
 null_simERR.hm.r <- tibble(
@@ -690,3 +736,50 @@ plot_med.ERR.hm.r <- ggplot(med_ERR.hm.r,
     color = "Curve type"
   ) +
   scale_color_manual(values = c(Simulated = "blue", Theoretical = "red"))
+
+#-------------------------------------------------------------------------------
+# tri effect size
+# Simulated ERRs
+tri_simERR.hm.r <- tibble(
+  r = r_vals,
+  err = sapply(r_vals, function(r)
+    err_m.sim(
+      k_sims = 15000,
+      n = 20,
+      r = r,
+      control_mu = rep(0, 5),
+      exp_mu = c(0.4, 0, 0.8, 0, 0.2),
+      sd = 1
+    )
+  ),
+  type = "Simulated"
+)
+
+# True ERRs
+tri_trueERR.hm.r <- tibble(
+  r = r_vals,
+  err = rep(true_err(
+    n = 20,
+    alpha = .05,
+    pop.es = c(0.4, 0, 0.8, 0, 0.2),
+    wgt = c(0.333,0,0.333,0,0.333)
+  ), length(r_vals)),
+  type = "Theoretical"
+)
+
+tri_ERR.hm.r <- bind_rows(tri_simERR.hm.r, tri_trueERR.hm.r)
+
+plot_tri.ERR.hm.r <- ggplot(tri_ERR.hm.r,
+                            aes(x = r, y = err, color = type)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "ERR vs Correlation r ES=0.2,0.4,0.8",
+    x = "Correlation between DVs r = [0, 1]",
+    y = "ERR",
+    color = "Curve type"
+  ) +
+  scale_color_manual(values = c(Simulated = "blue", Theoretical = "red"))
+
+plot_tri.ERR.hm.r
+
