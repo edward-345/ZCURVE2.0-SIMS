@@ -160,7 +160,7 @@ true_edr <- function(n, alpha = .05,
 }
 
 true_err <- function(n, alpha = .05,
-                     pop.es=numeric(5), wgt=c(0.2,0.2,0.2,0.2,0.2)) {
+                     pop.es=numeric(5), wgt=c(1,0,0,0,0)) {
   N <- 2*n
   se <- 2/sqrt(N)
   
