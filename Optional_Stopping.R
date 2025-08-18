@@ -129,10 +129,56 @@ OptSt_strong.plot <- plot(OptSt_strong$pval_model,
 
 ######################----------------------------------------------------------
 # ZCURVE 3.0 RESULTS
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
+
+ymax <- 1.8
+# TEST4HETEROGENEITY <- 0
+TEST4BIAS <- TRUE
+# Title <- past("title string")
+Est.method <- "EXT"
+# boot.iter <- 500
+ncz <- c(0:6)
+#W.FIXED <- TRUE
+#w.fix   <- 
+# Component locations (z-values at which densities are centered)
+components <- length(ncz)           # Number of components
+zsd <- 0.5                            # SD of standard normal z-distribution
+zsds = rep(zsd,components)          # one SD for each component
+# Int.Beg <- 1.96
+# Int.End <- 6
+
 ######################----------------------------------------------------------
+# Null Hypothesis true
+ymax <- 1.9
+optst.null <- Zing(OptSt_null$sig_zscores)
 
+ymax <- 0.9
+optst.null_pvals <- Zing(pval_converter(OptSt_null$all_pvals))
 
+#-------------------------------------------------------------------------------
+# Weak ES = 0.2
+ymax <- 1.9
+optst.weak <- Zing(OptSt_weak$sig_zscores)
 
+ymax <- 0.9
+optst.weak_pvals <- Zing(pval_converter(OptSt_weak$all_pvals))
+
+#-------------------------------------------------------------------------------
+# Med ES = 0.5
+ymax <- 1.0
+optst.med <- Zing(OptSt_med$sig_zscores)
+
+ymax <- 0.5
+optst.med_pvals <- Zing(pval_converter(OptSt_med$all_pvals))
+
+#-------------------------------------------------------------------------------
+# Strong ES = 0.8
+ymax <- 0.8
+optst.strong <- Zing(OptSt_strong$sig_zscores)
+
+ymax <- 0.6
+optst.strong_pvals <- Zing(pval_converter(OptSt_strong$all_pvals))
 
 
 
