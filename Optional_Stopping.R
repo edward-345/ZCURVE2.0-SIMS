@@ -56,11 +56,98 @@ opt_stopping <- function(k_sims, n_obs = 20, extra_n = 10,
   sig_zscores <- sig_zscores[1:(B - 1)]
   #Fit model
   model <- zcurve(sig_zscores, control = list(parallel = TRUE))
+  
   all_pvals <- unlist(pval_list)
+  pval_model <- zcurve(p = all_pvals, control = list(parallel = TRUE))
   
   results <- list(sig_zscores = sig_zscores,
                   model = model,
+                  pval_model = pval_model,
                   all_pvals = all_pvals)
   
   return(results)
 }
+
+######################----------------------------------------------------------
+# ZCURVE 2.0 RESULTS
+######################----------------------------------------------------------
+# Null Hypothesis true
+OptSt_null <- opt_stopping(1000)
+
+summary(OptSt_null$model)
+OptSt_null.plot <- plot(OptSt_null$model,
+                    CI = TRUE, annotation = TRUE,
+                    main = "Optional Stopping under Null Hypothesis")
+
+summary(OptSt_null$pval_model)
+OptSt_null.plot <- plot(OptSt_null$pval_model,
+                        CI = TRUE, annotation = TRUE,
+                        main = "Optional Stopping under Null with Total Pvals")
+
+#-------------------------------------------------------------------------------
+#Weak ES = 0.2
+OptSt_weak <- opt_stopping(1000, exp_mu = 0.2)
+
+summary(OptSt_weak$model)
+OptSt_weak.plot <- plot(OptSt_weak$model,
+                        CI = TRUE, annotation = TRUE,
+                        main = "Optional Stopping Weak ES = .2")
+
+summary(OptSt_weak$pval_model)
+OptSt_weak.plot <- plot(OptSt_weak$pval_model,
+                        CI = TRUE, annotation = TRUE,
+                        main = "Optional Stopping Weak ES = .2 with Total Pvals")
+
+#-------------------------------------------------------------------------------
+#Med ES = 0.5
+OptSt_med <- opt_stopping(1000, exp_mu = 0.5)
+
+summary(OptSt_med$model)
+OptSt_med.plot <- plot(OptSt_med$model,
+                        CI = TRUE, annotation = TRUE,
+                        main = "Optional Stopping Med ES = .5")
+
+summary(OptSt_med$pval_model)
+OptSt_med.plot <- plot(OptSt_med$pval_model,
+                        CI = TRUE, annotation = TRUE,
+                        main = "Optional Stopping Med ES = .5 with Total Pvals")
+
+#-------------------------------------------------------------------------------
+#Strong ES = 0.8
+OptSt_strong <- opt_stopping(1000, exp_mu = 0.8)
+
+summary(OptSt_strong$model)
+OptSt_strong.plot <- plot(OptSt_strong$model,
+                       CI = TRUE, annotation = TRUE,
+                       main = "Optional Stopping Strong ES = .8")
+
+summary(OptSt_strong$pval_model)
+OptSt_strong.plot <- plot(OptSt_strong$pval_model,
+                       CI = TRUE, annotation = TRUE,
+                       main = "Optional Stopping Strong ES = .8 with Total Pvals")
+
+
+######################----------------------------------------------------------
+# ZCURVE 3.0 RESULTS
+######################----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
