@@ -2,7 +2,7 @@ source('helper_functions.R')
 
 #----------------------------------------------
 # Optional stopping
-opt_stopping <- function(k_sims, n_obs = 20, extra_n = 10,
+opt_stopping <- function(k_sims, n_obs = 20,
                          control_mu = 0, exp_mu = 0, st_d = 1) {
   
   #Vectors to store significant ony z-scores and all p-vals
@@ -13,19 +13,31 @@ opt_stopping <- function(k_sims, n_obs = 20, extra_n = 10,
   B <- 1 
   
   for (i in 1:k_sims) {
-    # Resample both groups until signifcant
-    repeat {
       #Sample experimental and control group from normal distribution
-      pre_exp <- rnorm(n = n_obs, mean = exp_mu, sd = st_d)
-      pre_control <- rnorm(n = n_obs, mean = control_mu, sd = st_d)
       
+    
+      exp_group <- rnorm(n = n_obs, mean = exp_mu, sd = st_d)
+      control <- rnorm(n = n_obs, mean = control_mu, sd = st_d)
+      
+      exp <- rnorm(n = 3*n_obs, mean = exp_mu, sd = st_d) #n = 60
+      control <- rnorm(n = 3*n_obs, mean = control_mu, sd = st_d)
+      
+      exp_1 <- exp[1:(length(exp)/3)]
+      control_1 <- control[1:(length(exp)/3)]
+      
+      exp_2 <- exp[(length(exp)/3):(2*(length(exp)/3))]
+      control_2 <- control[1:(length(exp)/3) + (length(exp)/3)]
+      
+      exp_3 <- exp[1:((length(exp)/3)*3)]
+      control_3 <- control[1:((length(exp)/3)*3)]
+      
+      exp_2 <- exp[]
       #P-value from two-sided two sample t-test
       pre_pval <- t.test(pre_exp, pre_control, var.equal = TRUE)$p.value
       #Add p-value to pval_list regardless of significance
       pval_list[[length(pval_list) + 1]] <- pre_pval
       if (pre_pval <= 0.05) break
     }
-    
     # Sampling 10 additional participants per group
     extra_exp <- rnorm(n = extra_n, mean = exp_mu, sd = st_d)
     extra_control <- rnorm(n = extra_n, mean = control_mu, sd = st_d)
@@ -67,6 +79,69 @@ opt_stopping <- function(k_sims, n_obs = 20, extra_n = 10,
   
   return(results)
 }
+
+
+multi_sample <- function(k_sims, n_obs = 20,
+                         control_mu = 0, exp_mu = 0, st_d = 1) {
+  
+  #Vectors to store significant ony z-scores and all p-vals
+  sig_zscores <- numeric(k_sims)
+  total_pvals <- list()
+  
+  #Counter
+  K <- 1 
+  
+  for (i in 1:k_sims) {
+    sample1 <- 1:n_obs
+    sample2 <- (n_obs+1):(2*n_obs)
+    sample3 <- ((2*n_obs)+1):(3*n_obs)
+    samples <- list(sample1 = sample1,
+                    sample2 = sample2,
+                    sample3 = sample3,
+                    sample12 = c(sample1, sample2),
+                    sample13 = c(sample1, sample3),
+                    sample23 = c(sample2, sample3),
+                    sample123 = c(sample1, sample2, sample3))
+    
+    exp_group <- rnorm(n = 3*n_obs, mean = exp_mu, sd = st_d)
+    control <- rnorm(n = 3*n_obs, mean = control_mu, sd = st_d)
+    
+    pval_storage <- numeric(7)
+    
+    for (j in 1:7) {
+      sub_exp <- exp_group[unlist(samples[j])]
+      sub_control <- control[unlist(samples[j])]
+      
+      pval <- t.test(sub_exp, sub_control, var.equal=TRUE)$p.value
+      pval_storage[j] <- pval
+      
+      total_pvals[[length(total_pvals) + 1]] <- pval
+    }
+    
+    if (min(pval_storage) < 0.05) {
+      sig_zscores[K] <- pval_converter(min(pval_storage))
+      K <- K+1
+    } 
+    
+  }
+  
+  total_pvals <- unlist(total_pvals)
+  sig_zscores <- sig_zscores[1:(K - 1)]
+  
+  model <- Zing(sig_zscores)
+  pval_model <- Zing(pval_converter(total_pvals))
+  
+  results <- list(model = model,
+                 pval_model = pval_model, 
+                 sig_zscores = sig_zscores,
+                 total_pvals = total_pvals)
+  
+  return(results)
+}
+
+#To use, store it as a variable of a function
+OS_null <- multi_sample(1000)
+
 
 ######################----------------------------------------------------------
 # ZCURVE 2.0 RESULTS
