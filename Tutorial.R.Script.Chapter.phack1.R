@@ -31,16 +31,19 @@ source(zcurve3b)
 pcurve <- "https://github.com/UlrichSchimmack/zcurve3.0/raw/refs/heads/main/Pcurve.Function.R"
 source(pcurve)
 
+library(tidyverse)
+library(faux)
+
 #T-Tests for multiple covariates
-multi_ttests <- function(control, exp) {
+multi_ttests <- function(exp, control) {
   
   ttest_res <- list()
   
   for (i in seq_len(ncol(control))) {
     nm <- paste0("dv", i, "_ttest")
-    ttest_res[[nm]] <- t.test(control[, i], exp[, i], var.equal = TRUE)
+    ttest_res[[nm]] <- t.test(exp[, i], control[, i], var.equal = TRUE)
   }
-  ttest_res$avg_ttest <- t.test(rowMeans(control), rowMeans(exp_grp),
+  ttest_res$avg_ttest <- t.test(rowMeans(exp), rowMeans(control),
                                 var.equal = TRUE)
   return(ttest_res)
   }
@@ -109,12 +112,14 @@ for (run.i in b:e ) { # for loop to run the simulations
     count.run <- count.run + 1
     
     #GENERATE EXP AND CONTROL SAMPLES AND THEIR Y VALUES
+    #NOTE THIS USES faux::rnorm_multi()
+    n_vars <- sims$n.vars[run.i]
     exp_group <- rnorm_multi(n = sims$n.obs[run.i],
-                             vars = rep(sims$es.mean[run.i], sims$n.vars[run.i]),
+                             mu = rep(sims$es.mean[run.i], n_vars),
                              sd = 1,
-                             r = sim$r.var[run.i])
+                             r = sims$r.var[run.i])
     control_group <- rnorm_multi(n = sims$n.obs[run.i],
-                                 vars = rep(0, sims$n.vars[run.i]),
+                                 mu = rep(0, n_vars),
                                  sd = 1,
                                  r = 0)
     
@@ -133,56 +138,61 @@ for (run.i in b:e ) { # for loop to run the simulations
     
     res.run <- data.frame()
     for (i in seq_len(length(ttest_res))) {
-      tval <- ttest_res[[i]]$statistic
-      dfs <- ttest_res[[i]]$parameter
-      se <- ttest_res[[i]]$stderr
+      tval <- unname(as.numeric(ttest_res[[i]]$statistic))
+      df <- unname(as.numeric(ttest_res[[i]]$parameter))
+      N <- df + 2
+      se <- unname(as.numeric(ttest_res[[i]]$stderr))
       es <- ttest_res[[i]]$estimate
-      delta <- es[1]-es[2]
-      pval <- ttest_res[[i]]$p.value
+      delta <- unname(as.numeric(es[1]-es[2]))
+      pval <- unname(as.numeric(ttest_res[[i]]$p.value))
       
       res.run <- rbind(res.run,
-                       c(count.run,
-                         sims$es.mean[run.i],
-                         delta,
-                         se,
-                         tval,
-                         dfs,
-                         pval))
+                       data.frame(
+                         study = count.run,
+                         N = N,
+                         es.mean = sims$es.mean[run.i],
+                         delta = delta,
+                         se = se,
+                         t = tval,
+                         p = pval,
+                         df = df))
     }
     
     results <- rbind(results, res.run)
     
     #IF THE LOWEST PVALUE IS SIGNIFCANT ADD TO SIGNIFCANT PVAL COUNTER
     if (min_pvalue < .05) {
-      count.sig = count.sig + 1
+      count.sig <- count.sig + 1
       }
     
   } #END OF WHILE LOOP  
   
-  results$N <- results$df+2
-  results$se <- 2/sqrt(results$N)
-  results$nct <- abs(results[,2]/results$se)  
+  #results$N <- results$df+2
+  #results$se <- 2/sqrt(results$N)
+  results$nct <- abs(results$delta/results$se)  
   results$abs.t <- abs(results$t)
   results$z <- qnorm(pt(results$abs.t,results$N-2,log.p=TRUE),log.p=TRUE)
+  
   results$pow.dir <- pt(qt(.975,results$df),results$df,results$nct,lower.tail=FALSE)
   results$pow.sign.err <- pt(-qt(.975,results$df),results$df,results$nct,lower.tail=TRUE)
   results$pow <- results$pow.dir + results$pow.sign.err
   
-  summary(results)
   
   plot(results$abs.t,results$z)
   cor(results$abs.t,results$z)
   
-  col1b = rgb(0, 100, 100, 255, max = 255,alpha = 50)
-  col2b = rgb(100,0,100, max = 255, alpha = 50)
+  col1b <- rgb(0, 100, 100, 255, max = 255,alpha = 50)
+  col2b <- rgb(100,0,100, max = 255, alpha = 50)
   
   cor(results$N,results$pow)
-  cor(abs(results[,2]),results$pow) #  only if effect sizes are heterogeneous
+  #  only if effect sizes are heterogeneous cor(abs(results[,2]),results$pow) 
+  cor(abs(results$es.mean), results$pow)   # across-study pop effects vs power
+  cor(abs(results$delta),   results$pow)   # observed effects vs power
   
-  true.edr = mean(results$pow);true.edr
-  true.err = sum(results$pow*results$pow.dir)/sum(results$pow);true.err
+  true.edr <- mean(results$pow);true.edr
+  true.err <- sum(results$pow*results$pow.dir)/sum(results$pow);true.err
   
-  tab = table(results[,7] < .05);tab/sum(tab) #ODR
+  tab <- table(results$p < .05);tab/sum(tab) #ODR
   
   true.edr
   true.err
