@@ -200,15 +200,18 @@ for (run.i in b:e ) { # for loop to run the simulations
   sim.z.all = results$z
   sim.t.all = results$abs.t
   
-  
-  sim.min.p = apply(matrix(results$V7,7,),2,function(x) as.numeric(x == min(x)))
+  #FINDING MIN PVALUE FOR ALL STUDIES USING NAMED COLUMNS
+  m <- sims$n.vars[run.i] + 1
+  sim.min.p <- apply(matrix(results$p, nrow = m), 2,
+                     function(x) seq_along(x) == which.min(x))
   results$min.p = c(sim.min.p)
-  table(results$min.p)
-  table(sim.z.all[results$min.p == TRUE] > 1.96)
   
-  sim.z.max = sim.z.all[sim.min.p == TRUE]
-  sim.t.max = sim.t.all[sim.min.p == TRUE]
-  sim.df.max = results$df[sim.min.p == TRUE]
+  table(results$min.p)
+  table(sim.z.all[results$min.p] > 1.96)
+  
+  sim.z.max  <- sim.z.all[results$min.p]
+  sim.t.max  <- sim.t.all[results$min.p]
+  sim.df.max <- results$df[results$min.p]
   
   
   source(zcurve3)
