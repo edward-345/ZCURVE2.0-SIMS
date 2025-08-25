@@ -110,11 +110,11 @@ for (run.i in b:e ) { # for loop to run the simulations
     
     #GENERATE EXP AND CONTROL SAMPLES AND THEIR Y VALUES
     exp_group <- rnorm_multi(n = sims$n.obs[run.i],
-                             vars = sims$es.mean[run.i],
+                             vars = rep(sims$es.mean[run.i], sims$n.vars[run.i]),
                              sd = 1,
                              r = sim$r.var[run.i])
     control_group <- rnorm_multi(n = sims$n.obs[run.i],
-                                 vars = rep(0,),
+                                 vars = rep(0, sims$n.vars[run.i]),
                                  sd = 1,
                                  r = 0)
     
@@ -124,21 +124,33 @@ for (run.i in b:e ) { # for loop to run the simulations
     #EXTRACT PVALUES FOR COMPARISON
     pvalues <- sapply(ttest_res, function(x) x$p.value)
     
+    #MINIMUM PVALUE OF THE T-TESTS
+    min_pvalue <- min(pvalues)
+    
     #EXTRACT VALUES FROM THE MOST SIG TEST FOR RESULTS DATA FRAME
     i_min <- which.min(vapply(ttest_res, function(m) m$p.value, numeric(1)))
     sig_ttest <- ttest_res[[i_min]]
     
-    #MINIMUM PVALUE OF THE T-TESTS
-    min_pvalue <- min(pvalues)
+    res.run <- data.frame()
+    for (i in seq_len(length(ttest_res))) {
+      tval <- ttest_res[[i]]$statistic
+      dfs <- ttest_res[[i]]$parameter
+      se <- ttest_res[[i]]$stderr
+      es <- ttest_res[[i]]$estimate
+      delta <- es[1]-es[2]
+      pval <- ttest_res[[i]]$p.value
+      
+      res.run <- rbind(res.run,
+                       c(count.run,
+                         sims$es.mean[run.i],
+                         delta,
+                         se,
+                         tval,
+                         dfs,
+                         pval))
+    }
     
-    tval <- sig_ttest$statistic
-    dfs <- sig_ttest$parameter
-    se <- sig_ttest$stderr
-    es <- sig_ttest$estimate
-    delta <- es[1]-es[2]
-    
-    res.run = rbind(res.run,
-                    c(count.run, pop.es, delta, se, tval, dfs, min_pval))
+    results <- rbind(results, res.run)
     
     #IF THE LOWEST PVALUE IS SIGNIFCANT ADD TO SIGNIFCANT PVAL COUNTER
     if (min_pvalue < .05) {
