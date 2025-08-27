@@ -82,12 +82,25 @@ sims <- data.frame(sims)
 colnames(sims) <- c("run","es.mean","r.var","n.obs", "n.vars")
 dim(sims)
 
-run.i <- 66       # used for testing without loop
+#run.i <- 66       # used for testing without loop
 b <- 1            # form row b
-e <- 5            # to row e, used for testing
+#e <- 5            # to row e, used for testing
 e <- nrow(sims);e # to last row, run all conditions
 
-res = c()        # collect the results 
+# BUILDING RES COLUMN NAMES
+#err_names <- c("z.all","t.all","t.curve.all","z.sig","z.sig.sel","t.sig.sel","pcurve.all","pcurve.sig")
+err_names <- c("z.all","t.all","z.sig","z.sig.sel","t.sig.sel",
+               "pcurve.all","pcurve.sig")
+
+RES_COLS <- c(
+  "run","es.mean","r.var","n.obs","n.vars",
+  "true.err",
+  paste0("err.", err_names),
+  "true.edr",
+  paste0("edr.", err_names)
+)
+
+res <- data.frame()        # collect the results 
 
 ################################################################################
 ################################################################################
@@ -95,7 +108,7 @@ res = c()        # collect the results
 for (run.i in b:e ) { # for loop to run the simulations
   
   #Run iteration tracker
-  print(paste("Run: ",run.i))
+  print(paste("!!!!!!!!!!!!! RUN: ",run.i))
   sims[run.i,]
   
   #EMPTY LIST OF TTEST SUMMARIES FROM SIMULATIONS
@@ -139,7 +152,7 @@ for (run.i in b:e ) { # for loop to run the simulations
     res.run <- data.frame()
     for (i in seq_len(length(ttest_res))) {
       tval <- unname(as.numeric(ttest_res[[i]]$statistic))
-      df <- unname(as.numeric(ttest_res[[i]]$parameter))
+      df <- as.numeric(unname(ttest_res[[i]]$parameter))
       N <- df + 2
       se <- unname(as.numeric(ttest_res[[i]]$stderr))
       es <- ttest_res[[i]]$estimate
@@ -184,10 +197,10 @@ for (run.i in b:e ) { # for loop to run the simulations
   col1b <- rgb(0, 100, 100, 255, max = 255,alpha = 50)
   col2b <- rgb(100,0,100, max = 255, alpha = 50)
   
-  cor(results$N,results$pow)
+  suppressWarnings(cor(results$N, results$pow))
   #  only if effect sizes are heterogeneous cor(abs(results[,2]),results$pow) 
-  cor(abs(results$es.mean), results$pow)   # across-study pop effects vs power
-  cor(abs(results$delta),   results$pow)   # observed effects vs power
+  suppressWarnings(cor(abs(results$es.mean), results$pow))   # across-study pop effects vs power
+  suppressWarnings(cor(abs(results$delta),   results$pow))  # observed effects vs power
   
   true.edr <- mean(results$pow);true.edr
   true.err <- sum(results$pow*results$pow.dir)/sum(results$pow);true.err
@@ -224,11 +237,13 @@ for (run.i in b:e ) { # for loop to run the simulations
   res.2 = Zing(sim.t.all);res.2
   res.2 = res.2$res[2:3];res.2
   
-  source(zcurve3)
-  Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  Est.Method = "DF"
-  res.3 = Zing(sim.t.all,df=median(results$df));res.3
-  res.3 = res.3$res[2:3];res.3
+
+  #source(zcurve3)
+  #Title = paste(round(true.edr*100),"  ",round(true.err*100))
+  #Est.Method = "DF"
+  #res.3 = Zing(sim.t.all, df = as.numeric(median(results$df)));res.3
+  #res.3 = res.3$res[2:3];res.3
+  
   
   source(zcurve3)
   Title = paste(round(true.edr*100),"  ",round(true.err*100))
@@ -248,7 +263,7 @@ for (run.i in b:e ) { # for loop to run the simulations
   TEST4BIAS = TRUE
   just = 1
   Int.Beg = 2 + just
-  res.6 = Zing(sim.t.max,median(sim.df.max));res.6
+  res.6 = Zing(sim.t.max,df = as.numeric(median(sim.df.max)));res.6
   res.6 = res.6$res[2:3];res.6
   
   pcurve.input = paste0("t(",results$df,") = ",sim.t.all)
@@ -264,25 +279,28 @@ for (run.i in b:e ) { # for loop to run the simulations
   if (res.pcurve.2[2] > res.pcurve.2[1]) res.pcurve.2[1] = res.pcurve.2[2]
   
   res.run = rbind(
-    res.1,
-    res.2,
-    res.3,
-    res.4,
-    res.5,
-    res.6,
-    c(res.pcurve.1[1],NA),
-    c(res.pcurve.2[1],NA)
+    res.1, #z.all
+    res.2, #t.all
+    #res.3, #t.curve.all
+    res.4, #z.sig
+    res.5, #z.sig.sel
+    res.6, #t.sig.sel
+    c(res.pcurve.1[1],NA), #pcurve.all
+    c(res.pcurve.2[1],NA) #pcurve.sig
   )
   
-  rownames(res.run) = c("z.all","t.all","t.curve.all","z.sig","z.sig.sel",
-                        "t.sig.sel","pcurve.all","pcurve.sig")
+  rownames(res.run) <- c("z.all","t.all","z.sig","z.sig.sel",
+                         "t.sig.sel","pcurve.all","pcurve.sig")
+  
+  #rownames(res.run) = c("z.all","t.all","t.curve.all","z.sig","z.sig.sel","t.sig.sel","pcurve.all","pcurve.sig")
   
   round(rbind(c(true.err,true.edr),res.run),2)
   
-  res.run = c(unlist(sims[run.i,]),true.err,res.run[,1],true.edr,res.run[,2])
-  print(res.run)
+  res_row <- c(unlist(sims[run.i,]), true.err, res.run[,1], true.edr, res.run[,2])
+  row_df <- as.data.frame(t(res_row))
+  names(row_df) <- RES_COLS
   
-  res = rbind(res,res.run)
+  res <- rbind(res, row_df)
   
   write.table(res,"sim.phack1.dat")    # write results each trial
   # can resume if stopped 
@@ -326,61 +344,56 @@ dim(res)
 
 summary(res)
 
-res[,1:4]
+res[,1:5]
 
-round(res[2,],2)
+#round(res[2,],2)
 
 ########################################################################
 ### Evaluation of ERR estimates: z-values versus t(28)->p->z values
 ########################################################################
 
-# columns
-# -  5: true ERR
-# -  6: res.1
-# -  7: res.2 
-# -  8: res.3
-# -  9: res.4 z.sig
-# - 10: res.5 
-# - 11: res.6 
-# - 12: pcurve.1
-# - 13: pcurve.2  t.sig
 
-summary(res[,5:13])
+summary(res[,6:13])
 
+# CORRELATION OF n.vars WITH EVERY ERR VALUE
 cor(res[,5:13])[,1]
 
-rmse.err.1 = sqrt(mean((res[,5]-res[,6])^2));rmse.err.1
-rmse.err.2 = sqrt(mean((res[,5]-res[,7])^2));rmse.err.2
-rmse.err.3 = sqrt(mean((res[,5]-res[,8])^2,na.rm=TRUE));rmse.err.3
-rmse.err.4 = sqrt(mean((res[,5]-res[,9])^2,na.rm=TRUE));rmse.err.4
-rmse.err.5 = sqrt(mean((res[,5]-res[,10])^2,na.rm=TRUE));rmse.err.5
-rmse.err.6 = sqrt(mean((res[,5]-res[,11])^2,na.rm=TRUE));rmse.err.6
-rmse.pcu.1 = sqrt(mean((res[,5]-res[,12])^2,na.rm=TRUE));rmse.pcu.1
-rmse.pcu.2 = sqrt(mean((res[,5]-res[,13])^2,na.rm=TRUE));rmse.pcu.2
+library(caret) # for RMSE()
+
+rmse.err.1 <- RMSE(res$true.err, res$err.z.all);rmse.err.1
+rmse.err.2 <- RMSE(res$true.err, res$err.t.all);rmse.err.2
+#rmse.err.3 <- RMSE(res$true.err, res$err.t.curve.all);rmse.err.3
+rmse.err.4 <- RMSE(res$true.err, res$err.z.sig);rmse.err.4
+rmse.err.5 <- RMSE(res$true.err, res$err.z.sig.sel);rmse.err.5
+rmse.err.6 <- RMSE(res$true.err, res$err.t.sig.sel);rmse.err.6
+rmse.pcu.1 <- RMSE(res$true.err, res$err.pcurve.all);rmse.pcu.1
+rmse.pcu.2 <- RMSE(res$true.err, res$err.pcurve.sig);rmse.pcu.2
 
 ### all sig
 rmse.err.1
-rmse.err.2
+rmse.err.2 # LOWEST t.all
 rmse.err.3
 rmse.pcu.1
 
 ### min.p
 rmse.err.4
 rmse.err.5
-rmse.err.6
+rmse.err.6 # LOWEST t.sig.sel
 rmse.pcu.2
 
-
-res = res[order(res[,5]),]
+# ORDERS ROWS BY TRUE ERR
+res <- res[order(res$true.err), ]
 
 lwd.ci = .5
 
 ### all significant results
 
 graphics.off()
-plot(res[,5],res[,12],pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),col="purple3",ylab="",xlab="")  # plot OF and ER estimates
+plot(res$true.err, res$err.pcurve.all, pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),
+     col="purple3",ylab="",xlab="")  # plot OF and ER estimates
 par(new=TRUE)
-plot(res[,5],res[,6],xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,col="forestgreen",ylab="Estimated ERR",
+plot(res$true.err, res$err.z.all, xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,
+     col="forestgreen",ylab="Estimated ERR",
 	xlab = "Simulated True ERR")  # plot OF and ER estimates
 abline(a = 0, b = 1,lty=2)
 abline(v = .5,lty=2)
@@ -389,43 +402,64 @@ legend(.1,.9,legend=c("z-curve", "p-curve"),lwd=2,col=c("forestgreen","purple3")
 
 ### lowest p-value per study 
 
-graphics.off()
-plot(res[,5],res[,13],pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),col="purple3",ylab="",xlab="")  # plot OF and ER estimates
+#graphics.off()
+plot(res$true.err, res$err.pcurve.sig, pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),
+     col="purple3",ylab="",xlab="")  # plot OF and ER estimates
 par(new=TRUE)
-plot(res[,5],res[,9],xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,col="forestgreen",ylab="Estimated ERR",
+plot(res$true.err, res$err.z.sig, xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,
+     col="forestgreen",ylab="Estimated ERR",
 	xlab = "Simulated True ERR")  # plot OF and ER estimates
 abline(a = 0, b = 1,lty=2)
 abline(v = .5,lty=2)
 abline(h = .5,lty=2)
-legend(.1,.9,legend=c("z-curve", "p-curve"),lwd=2,col=c("forestgreen","purple3"))
+legend(.1,.9,legend=c("z-curve","p-curve"),lwd=2,col=c("forestgreen","purple3"))
 
-dir.bias.z = cbind(res[,9]-res[,5],res[,c(1:5,9)])
-round(dir.bias.z[abs(dir.bias.z[,1]) > .15,],2)
-summary(lm(dir.bias.z[,1] ~ res[,2] + res[,3] + res[,4]))
+
+# columns
+
+# -  4: n.obs -> now is n.vars col 5
+# -  5: true ERR -> col 6
+# -  6: res.1  #err.z.all -> col 7
+# -  7: res.2  #err.t.all -> col 8 
+# -  8: res.3  #err.t.curve.all
+# -  9: res.4  #err.z.sig
+# - 10: res.5  #err.z.sig.sel
+# - 11: res.6  #err.t.sig.sel
+# - 12: pcurve.1 #err.pcurve.all
+# - 13: pcurve.2  t.sig #err.pcurve.sig
+
+dir.bias.z = cbind(res$err.z.sig - res$true.err,res[,c(1:6,10)])
+round(dir.bias.z[abs(dir.bias.z[,1]) > .15,],4)
+# ASSUMPTIONS VIOLATED (SEVERE COLLINEARTY)
+summary(lm(dir.bias.z[,1] ~ res$es.mean + res$r.var + res$n.obs + res$n.vars))
 tapply(dir.bias.z[,1],res[,3],mean)
 
-dir.bias.p = cbind(res[,13]-res[,5],res[,c(1:5,13)])
+dir.bias.p = cbind(res$err.pcurve.sig - res$true.err, res[,c(1:6,14)])
 dir.bias.p[dir.bias.p < -.50] = NA
-round(dir.bias.p[abs(dir.bias.p[,1]) > .15,],2)
-summary(lm(dir.bias.p[,1] ~ res[,2] + res[,3] + res[,4] + res[,5]))
+round(dir.bias.p[abs(dir.bias.p[,1]) > .15,],4)
+summary(lm(dir.bias.p[,1] ~ res$es.mean + res$r.var + res$n.obs + res$n.vars))
 
 cor.lw = function(x) cor(x,use="complete.obs")
 cor.lw(cbind(dir.bias.z[,1],dir.bias.p[,1]))
 
 ###
 
-plot(res[,5],res[,9],pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),col="purple3",ylab="",xlab="")  # plot OF and ER estimates
+plot(res$true.err, res$err.z.sig, pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),
+     col="purple3",ylab="",xlab="")  # plot OF and ER estimates
 par(new=TRUE)
-plot(res[,5],res[,6],xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,col="forestgreen",ylab="Estimated ERR",
+plot(res$true.err, res$err.z.all, xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,
+     col="forestgreen",ylab="Estimated ERR",
 	xlab = "Simulated True ERR")  # plot OF and ER estimates
 abline(a = 0, b = 1,lty=2)
 legend(.1,.9,legend=c("z-values", "t->power->z"),lwd=2,col=c("forestgreen","purple3"))
 
 ###
 
-plot(res[,5],res[,10],pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),col="purple3",ylab="",xlab="")  # plot OF and ER estimates
+plot(res$true.err, res$err.z.sig.sel, pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),
+     col="purple3",ylab="",xlab="")  # plot OF and ER estimates
 par(new=TRUE)
-plot(res[,5],res[,6],xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,col="forestgreen",ylab="Estimated ERR",
+plot(res$true.err, res$err.z.all, xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,
+     col="forestgreen",ylab="Estimated ERR",
 	xlab = "Simulated True ERR")  # plot OF and ER estimates
 abline(a = 0, b = 1,lty=2)
 legend(.1,.9,legend=c("z-values", "t-curve"),lwd=2,col=c("forestgreen","purple3"))
