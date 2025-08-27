@@ -9,30 +9,35 @@
 ### 0.0 – SETUP
 
 # Disable scientific notation
-options(scipen = 999)
+# options(scipen = 999)
 
 # Set work directory
-setwd("C:/Users/ulric/Dropbox/PHPCurves/DOCS/z-curve/Tutorial")
+# setwd("C:/Users/ulric/Dropbox/PHPCurves/DOCS/z-curve/Tutorial")
 
 # Install required packages (run once only)
 #install.packages(c("zcurve", "KernSmooth", "stringr", "parallel","pwr"))
 
 # Load z-curve and P-curve functions from a local file
-setwd("C:/Users/ulric/Dropbox/PHPCurves/DOCS/z-curve/Tutorial")
-zcurve3 <- "Zing.25.07.11.test.R"
-source(zcurve3)
-pcurve <- "Pcurve.Function.R"
-source(pcurve)
+# setwd("C:/Users/ulric/Dropbox/PHPCurves/DOCS/z-curve/Tutorial")
+# zcurve3 <- "Zing.25.07.11.test.R"
+# source(zcurve3)
+# pcurve <- "Pcurve.Function.R"
+# source(pcurve)
 
-
+################################################################################
 # Alternatively, load z-curve and p-curve functions directly from GitHub
-zcurve3b <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
-source(zcurve3b)
+zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
+source(zcurve3)
 pcurve <- "https://github.com/UlrichSchimmack/zcurve3.0/raw/refs/heads/main/Pcurve.Function.R"
 source(pcurve)
+################################################################################
+# DEPENDENCIES
+source('pcurve.R')
+source('Zing3.R')
 
 library(tidyverse)
 library(faux)
+library(caret)
 
 #T-Tests for multiple covariates
 multi_ttests <- function(exp, control) {
@@ -47,10 +52,6 @@ multi_ttests <- function(exp, control) {
                                 var.equal = TRUE)
   return(ttest_res)
   }
-
-################################################################################
-### 1.0 – ILLUSTRATION WITH EXAMPLES
-
 
 ################################################################################
 ### 2.0 – SIMULATION 
@@ -88,9 +89,10 @@ b <- 1            # form row b
 e <- nrow(sims);e # to last row, run all conditions
 
 # BUILDING RES COLUMN NAMES
-#err_names <- c("z.all","t.all","t.curve.all","z.sig","z.sig.sel","t.sig.sel","pcurve.all","pcurve.sig")
-err_names <- c("z.all","t.all","z.sig","z.sig.sel","t.sig.sel",
+err_names <- c("z.all","t.all","t.curve.all",
+               "z.sig","z.sig.sel","t.sig.sel",
                "pcurve.all","pcurve.sig")
+
 
 RES_COLS <- c(
   "run","es.mean","r.var","n.obs","n.vars",
@@ -180,8 +182,6 @@ for (run.i in b:e ) { # for loop to run the simulations
     
   } #END OF WHILE LOOP  
   
-  #results$N <- results$df+2
-  #results$se <- 2/sqrt(results$N)
   results$nct <- abs(results$delta/results$se)  
   results$abs.t <- abs(results$t)
   results$z <- qnorm(pt(results$abs.t,results$N-2,log.p=TRUE),log.p=TRUE)
@@ -238,11 +238,11 @@ for (run.i in b:e ) { # for loop to run the simulations
   res.2 = res.2$res[2:3];res.2
   
 
-  #source(zcurve3)
-  #Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  #Est.Method = "DF"
-  #res.3 = Zing(sim.t.all, df = as.numeric(median(results$df)));res.3
-  #res.3 = res.3$res[2:3];res.3
+  source(zcurve3)
+  Title = paste(round(true.edr*100),"  ",round(true.err*100))
+  Est.Method = "OF"
+  res.3 = Zing(sim.t.all, df = as.numeric(median(results$df)));res.3
+  res.3 = res.3$res[2:3];res.3
   
   
   source(zcurve3)
@@ -281,7 +281,7 @@ for (run.i in b:e ) { # for loop to run the simulations
   res.run = rbind(
     res.1, #z.all
     res.2, #t.all
-    #res.3, #t.curve.all
+    res.3, #t.curve.all
     res.4, #z.sig
     res.5, #z.sig.sel
     res.6, #t.sig.sel
@@ -289,10 +289,9 @@ for (run.i in b:e ) { # for loop to run the simulations
     c(res.pcurve.2[1],NA) #pcurve.sig
   )
   
-  rownames(res.run) <- c("z.all","t.all","z.sig","z.sig.sel",
-                         "t.sig.sel","pcurve.all","pcurve.sig")
-  
-  #rownames(res.run) = c("z.all","t.all","t.curve.all","z.sig","z.sig.sel","t.sig.sel","pcurve.all","pcurve.sig")
+  rownames(res.run) <- c("z.all","t.all","t.curve.all",
+                        "z.sig","z.sig.sel","t.sig.sel",
+                        "pcurve.all","pcurve.sig")
   
   round(rbind(c(true.err,true.edr),res.run),2)
   
@@ -362,7 +361,7 @@ library(caret) # for RMSE()
 
 rmse.err.1 <- RMSE(res$true.err, res$err.z.all);rmse.err.1
 rmse.err.2 <- RMSE(res$true.err, res$err.t.all);rmse.err.2
-#rmse.err.3 <- RMSE(res$true.err, res$err.t.curve.all);rmse.err.3
+rmse.err.3 <- RMSE(res$true.err, res$err.t.curve.all);rmse.err.3
 rmse.err.4 <- RMSE(res$true.err, res$err.z.sig);rmse.err.4
 rmse.err.5 <- RMSE(res$true.err, res$err.z.sig.sel);rmse.err.5
 rmse.err.6 <- RMSE(res$true.err, res$err.t.sig.sel);rmse.err.6
