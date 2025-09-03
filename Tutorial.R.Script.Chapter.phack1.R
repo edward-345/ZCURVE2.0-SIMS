@@ -5,36 +5,24 @@
 ###############################################################################
 # Chapter 9 – P-Hacking Simulation 1: Pilot Dropping / Sample Patchwork
 ###############################################################################
-
 ### 0.0 – SETUP
 
-# Disable scientific notation
-# options(scipen = 999)
+options(scipen = 999)
+set.seed(67)
 
-# Set work directory
-# setwd("C:/Users/ulric/Dropbox/PHPCurves/DOCS/z-curve/Tutorial")
-
-# Install required packages (run once only)
-#install.packages(c("zcurve", "KernSmooth", "stringr", "parallel","pwr"))
-
-# Load z-curve and P-curve functions from a local file
-# setwd("C:/Users/ulric/Dropbox/PHPCurves/DOCS/z-curve/Tutorial")
-# zcurve3 <- "Zing.25.07.11.test.R"
-# source(zcurve3)
-# pcurve <- "Pcurve.Function.R"
-# source(pcurve)
-
-################################################################################
-# Alternatively, load z-curve and p-curve functions directly from GitHub
+# Load z-curve and p-curve functions directly from GitHub
 zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
 source(zcurve3)
 pcurve <- "https://github.com/UlrichSchimmack/zcurve3.0/raw/refs/heads/main/Pcurve.Function.R"
 source(pcurve)
-################################################################################
-# DEPENDENCIES
-source('pcurve.R')
-source('Zing3.R')
 
+
+# Install required packages (run once only)
+library(zcurve)
+library(KernSmooth)
+library(stringr)
+library(parallel)
+library(pwr)
 library(tidyverse)
 library(faux)
 library(caret)
@@ -56,13 +44,13 @@ multi_ttests <- function(exp, control) {
 ################################################################################
 ### 2.0 – SIMULATION 
 
-sim.runs <- 10                 # repeat each simulation 100 times
-sim.k.sig <- 1000             # how many significant results?
+sim.runs <- 100               # repeat each simulation 100 times
+sim.k.sig <- 10000             # how many significant results?
 
-sim.es.mean <- seq(0,1,.2)    # mean effect size, Cohen's d
-sim.n.obs <- c(10, 20, 40, 60, 80, 100)   # sample size per cell
-sim.r.var <- seq(0,1,.2)      # CORRELATION R BETWEEN COVARIATES
-sim.n.vars <- c(2, 4, 6, 8, 10, 12) # NUMBER OF COVARIATES 
+sim.es.mean <- seq(0, 1, .25)    # mean effect size, Cohen's d
+sim.n.obs <- c(15, 20, 30)   # sample size per cell
+sim.r.var <- c(0, .25, .50, .75)      # CORRELATION R BETWEEN COVARIATES
+sim.n.vars <- c(2, 5, 10) # NUMBER OF COVARIATES 
 #sim.es.sd <- seq(0,.6,.2) # heterogeneity of es (tau) 
 
 # MATRIX OF ALL POSSIBLE SIMULATION CONDITION COMBINATIONS 1296 X 5
@@ -83,15 +71,12 @@ sims <- data.frame(sims)
 colnames(sims) <- c("run","es.mean","r.var","n.obs", "n.vars")
 dim(sims)
 
-#run.i <- 66       # used for testing without loop
 b <- 1            # form row b
-#e <- 5            # to row e, used for testing
 e <- nrow(sims);e # to last row, run all conditions
 
 # BUILDING RES COLUMN NAMES
 err_names <- c("z.all","t.all","t.curve.all",
-               "z.sig","z.sig.sel","t.sig.sel",
-               "pcurve.all","pcurve.sig")
+               "z.sig","z.sig.sel","t.sig.sel")
 
 
 RES_COLS <- c(
@@ -110,7 +95,7 @@ res <- data.frame()        # collect the results
 for (run.i in b:e ) { # for loop to run the simulations
   
   #Run iteration tracker
-  print(paste("!!!!!!!!!!!!! RUN: ",run.i))
+  print(paste("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! RUN: ",run.i))
   sims[run.i,]
   
   #EMPTY LIST OF TTEST SUMMARIES FROM SIMULATIONS
@@ -142,24 +127,27 @@ for (run.i in b:e ) { # for loop to run the simulations
     ttest_res <- multi_ttests(exp_group, control_group)
     
     #EXTRACT PVALUES FOR COMPARISON
-    pvalues <- sapply(ttest_res, function(x) x$p.value)
+    #pvalues <- sapply(ttest_res, function(x) x$p.value)
     
     #MINIMUM PVALUE OF THE T-TESTS
-    min_pvalue <- min(pvalues)
+    #min_pvalue <- min(pvalues)
     
     #EXTRACT VALUES FROM THE MOST SIG TEST FOR RESULTS DATA FRAME
-    i_min <- which.min(vapply(ttest_res, function(m) m$p.value, numeric(1)))
-    sig_ttest <- ttest_res[[i_min]]
+    #i_min <- which.min(vapply(ttest_res, function(m) m$p.value, numeric(1)))
+    #TTEST WITH THE LOWEST PVALUE
+    #sig_ttest <- ttest_res[[i_min]]
     
+    #FOR LOOP TO GET TEST STATISTICS OF ALL COMPARISONS IN EACH 
+    #WHIL LOOP ITERATION
     res.run <- data.frame()
     for (i in seq_len(length(ttest_res))) {
-      tval <- unname(as.numeric(ttest_res[[i]]$statistic))
-      df <- as.numeric(unname(ttest_res[[i]]$parameter))
+      tval <- unname(ttest_res[[i]]$statistic)
+      df <- unname(ttest_res[[i]]$parameter)
       N <- df + 2
-      se <- unname(as.numeric(ttest_res[[i]]$stderr))
-      es <- ttest_res[[i]]$estimate
-      delta <- unname(as.numeric(es[1]-es[2]))
-      pval <- unname(as.numeric(ttest_res[[i]]$p.value))
+      se <- 2/sqrt(N)
+      es <- ttest_res[[i]]$estimate 
+      delta <- unname(as.numeric(es[1]-es[2])) # should be pop 
+      pval <- unname(ttest_res[[i]]$p.value)
       
       res.run <- rbind(res.run,
                        data.frame(
@@ -173,6 +161,7 @@ for (run.i in b:e ) { # for loop to run the simulations
                          df = df))
     }
     
+    # TEST PARAMETERS OF EVERY TEST, NROWS = NUMBER OF TOTAL TESTS
     results <- rbind(results, res.run)
     
     #IF THE LOWEST PVALUE IS SIGNIFCANT ADD TO SIGNIFCANT PVAL COUNTER
@@ -182,38 +171,28 @@ for (run.i in b:e ) { # for loop to run the simulations
     
   } #END OF WHILE LOOP  
   
-  results$nct <- abs(results$delta/results$se)  
+  results$nct <- abs(sims$es.mean[run.i]/results$se)  
   results$abs.t <- abs(results$t)
   results$z <- qnorm(pt(results$abs.t,results$N-2,log.p=TRUE),log.p=TRUE)
   
-  results$pow.dir <- pt(qt(.975,results$df),results$df,results$nct,lower.tail=FALSE)
-  results$pow.sign.err <- pt(-qt(.975,results$df),results$df,results$nct,lower.tail=TRUE)
+  #POWER OF TESTS
+  results$pow.dir <- pt(qt(.975,results$df),
+                        results$df,
+                        results$nct,
+                        lower.tail=FALSE)
+  results$pow.sign.err <- pt(-qt(.975,results$df),
+                             results$df,
+                             results$nct,
+                             lower.tail=TRUE)
   results$pow <- results$pow.dir + results$pow.sign.err
-  
-  
-  plot(results$abs.t,results$z)
-  cor(results$abs.t,results$z)
-  
-  col1b <- rgb(0, 100, 100, 255, max = 255,alpha = 50)
-  col2b <- rgb(100,0,100, max = 255, alpha = 50)
-  
-  suppressWarnings(cor(results$N, results$pow))
-  #  only if effect sizes are heterogeneous cor(abs(results[,2]),results$pow) 
-  suppressWarnings(cor(abs(results$es.mean), results$pow))   # across-study pop effects vs power
-  suppressWarnings(cor(abs(results$delta),   results$pow))  # observed effects vs power
   
   true.edr <- mean(results$pow);true.edr
   true.err <- sum(results$pow*results$pow.dir)/sum(results$pow);true.err
   
-  tab <- table(results$p < .05);tab/sum(tab) #ODR
-  
-  true.edr
-  true.err
-  
   sim.z.all = results$z
   sim.t.all = results$abs.t
   
-  #FINDING MIN PVALUE FOR ALL STUDIES USING NAMED COLUMNS
+  #FINDING MIN PVALUE FOR ALL STUDIES IN EACH LOOP ITERATION
   m <- sims$n.vars[run.i] + 1
   sim.min.p <- apply(matrix(results$p, nrow = m), 2,
                      function(x) seq_along(x) == which.min(x))
@@ -226,57 +205,45 @@ for (run.i in b:e ) { # for loop to run the simulations
   sim.t.max  <- sim.t.all[results$min.p]
   sim.df.max <- results$df[results$min.p]
   
-  
+  #COLS 2 AND 3 ARE ERR AND EDR RESPECTIVELY 
   source(zcurve3)
-  Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  res.1 = Zing(sim.z.all);res.1
-  res.1 = res.1$res[2:3];res.1
+  Title <- paste(round(true.edr*100),"  ",round(true.err*100))
+  res.1 <- Zing(sim.z.all);res.1
+  res.1 <- res.1$res[2:3];res.1
   
-  source(zcurve3)
-  Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  res.2 = Zing(sim.t.all);res.2
-  res.2 = res.2$res[2:3];res.2
+  #source(zcurve3)
+  Title <- paste(round(true.edr*100),"  ",round(true.err*100))
+  res.2 <- Zing(sim.t.all);res.2
+  res.2 <- res.2$res[2:3];res.2
   
 
-  source(zcurve3)
-  Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  Est.Method = "OF"
-  res.3 = Zing(sim.t.all, df = as.numeric(median(results$df)));res.3
-  res.3 = res.3$res[2:3];res.3
+  #source(zcurve3)
+  Title <- paste(round(true.edr*100),"  ",round(true.err*100))
+  Est.Method <- "OF"
+  res.3 <- Zing(sim.t.all, df <- as.numeric(median(results$df)));res.3
+  res.3 <- res.3$res[2:3];res.3
   
   
-  source(zcurve3)
-  Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  res.4 = Zing(sim.z.max);res.4
-  res.4 = res.4$res[2:3];res.4
+  #source(zcurve3)
+  Title <- paste(round(true.edr*100),"  ",round(true.err*100))
+  res.4 <- Zing(sim.z.max);res.4
+  res.4 <- res.4$res[2:3];res.4
   
-  source(zcurve3)
-  Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  TEST4BIAS = TRUE
-  just = 1
-  Int.Beg = 2 + just
-  res.5 = Zing(sim.z.max);res.5
-  res.5 = res.5$res[2:3];res.5
+  #source(zcurve3)
+  Title <- paste(round(true.edr*100),"  ",round(true.err*100))
+  TEST4BIAS <- TRUE
+  just <- 1
+  Int.Beg <- 2 + just
+  res.5 <- Zing(sim.z.max);res.5
+  res.5 <- res.5$res[2:3];res.5
   
-  source(zcurve3)
-  Title = paste(round(true.edr*100),"  ",round(true.err*100))
-  TEST4BIAS = TRUE
-  just = 1
-  Int.Beg = 2 + just
-  res.6 = Zing(sim.t.max,df = as.numeric(median(sim.df.max)));res.6
-  res.6 = res.6$res[2:3];res.6
-  
-  pcurve.input = paste0("t(",results$df,") = ",sim.t.all)
-  res.pcurve.1 = pcurve_app(pcurve.input,SHOW.PLOT=TRUE)
-  res.pcurve.1 
-  if (res.pcurve.1[2] > res.pcurve.1[1]) res.pcurve.1[1] = res.pcurve.1[2]
-  
-  
-  pcurve.input = paste0("t(",sim.df.max,") = ",sim.t.max)
-  res.pcurve.2 = pcurve_app(pcurve.input,SHOW.PLOT=TRUE)
-  res.pcurve.2 
-  true.err
-  if (res.pcurve.2[2] > res.pcurve.2[1]) res.pcurve.2[1] = res.pcurve.2[2]
+  #source(zcurve3)
+  Title <- paste(round(true.edr*100),"  ",round(true.err*100))
+  TEST4BIAS <- TRUE
+  just <- 1
+  Int.Beg <- 2 + just
+  res.6 <- Zing(sim.t.max,df <- as.numeric(median(sim.df.max)));res.6
+  res.6 <- res.6$res[2:3];res.6
   
   res.run = rbind(
     res.1, #z.all
@@ -285,13 +252,10 @@ for (run.i in b:e ) { # for loop to run the simulations
     res.4, #z.sig
     res.5, #z.sig.sel
     res.6, #t.sig.sel
-    c(res.pcurve.1[1],NA), #pcurve.all
-    c(res.pcurve.2[1],NA) #pcurve.sig
   )
   
   rownames(res.run) <- c("z.all","t.all","t.curve.all",
-                        "z.sig","z.sig.sel","t.sig.sel",
-                        "pcurve.all","pcurve.sig")
+                        "z.sig","z.sig.sel","t.sig.sel")
   
   round(rbind(c(true.err,true.edr),res.run),2)
   
@@ -388,10 +352,10 @@ lwd.ci = .5
 ### all significant results
 
 graphics.off()
-plot(res$true.err, res$err.pcurve.all, pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),
+plot(res$true.err, res$err.pcurve.all, pch=15,cex=1,xlim=c(0,0.4),ylim=c(0,0.4),
      col="purple3",ylab="",xlab="")  # plot OF and ER estimates
 par(new=TRUE)
-plot(res$true.err, res$err.z.all, xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,
+plot(res$true.err, res$err.z.all, xlim=c(0,0.4),ylim=c(0,0.4),pch=16,cex=1,
      col="forestgreen",ylab="Estimated ERR",
 	xlab = "Simulated True ERR")  # plot OF and ER estimates
 abline(a = 0, b = 1,lty=2)
@@ -402,30 +366,16 @@ legend(.1,.9,legend=c("z-curve", "p-curve"),lwd=2,col=c("forestgreen","purple3")
 ### lowest p-value per study 
 
 #graphics.off()
-plot(res$true.err, res$err.pcurve.sig, pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),
+plot(res$true.err, res$err.pcurve.sig, pch=15,cex=1,xlim=c(0,.4),ylim=c(0,.4),
      col="purple3",ylab="",xlab="")  # plot OF and ER estimates
 par(new=TRUE)
-plot(res$true.err, res$err.z.sig, xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,
+plot(res$true.err, res$err.z.sig, xlim=c(0,.4),ylim=c(0,.4),pch=16,cex=1,
      col="forestgreen",ylab="Estimated ERR",
 	xlab = "Simulated True ERR")  # plot OF and ER estimates
 abline(a = 0, b = 1,lty=2)
 abline(v = .5,lty=2)
 abline(h = .5,lty=2)
 legend(.1,.9,legend=c("z-curve","p-curve"),lwd=2,col=c("forestgreen","purple3"))
-
-
-# columns
-
-# -  4: n.obs -> now is n.vars col 5
-# -  5: true ERR -> col 6
-# -  6: res.1  #err.z.all -> col 7
-# -  7: res.2  #err.t.all -> col 8 
-# -  8: res.3  #err.t.curve.all
-# -  9: res.4  #err.z.sig
-# - 10: res.5  #err.z.sig.sel
-# - 11: res.6  #err.t.sig.sel
-# - 12: pcurve.1 #err.pcurve.all
-# - 13: pcurve.2  t.sig #err.pcurve.sig
 
 dir.bias.z = cbind(res$err.z.sig - res$true.err,res[,c(1:6,10)])
 round(dir.bias.z[abs(dir.bias.z[,1]) > .15,],4)
@@ -477,12 +427,12 @@ legend(.1,.9,legend=c("z-values", "t-curve"),lwd=2,col=c("forestgreen","purple3"
 # - 19: res.5
 # - 20: res.6
 
-rmse.edr.1 = sqrt(mean((res[,14]-res[,15])^2));rmse.edr.1
-rmse.edr.2 = sqrt(mean((res[,14]-res[,16])^2));rmse.edr.2
-rmse.edr.3 = sqrt(mean((res[,14]-res[,17])^2));rmse.edr.3
-rmse.edr.4 = sqrt(mean((res[,14]-res[,18])^2));rmse.edr.4
-rmse.edr.5 = sqrt(mean((res[,14]-res[,19])^2));rmse.edr.5
-rmse.edr.6 = sqrt(mean((res[,14]-res[,20])^2));rmse.edr.6
+rmse.edr.1 = sqrt(mean((res[,15]-res[,16])^2));rmse.edr.1
+rmse.edr.2 = sqrt(mean((res[,15]-res[,17])^2));rmse.edr.2
+rmse.edr.3 = sqrt(mean((res[,15]-res[,18])^2));rmse.edr.3
+rmse.edr.4 = sqrt(mean((res[,15]-res[,19])^2));rmse.edr.4
+rmse.edr.5 = sqrt(mean((res[,15]-res[,20])^2));rmse.edr.5
+rmse.edr.6 = sqrt(mean((res[,15]-res[,21])^2));rmse.edr.6
 
 rmse.edr.1
 rmse.edr.2
@@ -500,9 +450,9 @@ lwd.ci = .5
 ### all significant results
 
 graphics.off()
-plot(res[,14],res[,18],pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),col="purple3",ylab="",xlab="")  # plot OF and ER estimates
+plot(res[,15],res[,19],pch=15,cex=1,xlim=c(0,1),ylim=c(0,1),col="purple3",ylab="",xlab="")  # plot OF and ER estimates
 par(new=TRUE)
-plot(res[,14],res[,15],xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,col="forestgreen",
+plot(res[,15],res[,16],xlim=c(0,1),ylim=c(0,1),pch=16,cex=1,col="forestgreen",
 	ylab="Estimated EDR",
 	xlab = "Simulated True EDR")  
 abline(a = 0, b = 1,lty=2)
