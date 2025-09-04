@@ -186,8 +186,8 @@ for (run.i in b:e ) { # for loop to run the simulations
                              lower.tail=TRUE)
   results$pow <- results$pow.dir + results$pow.sign.err
   
-  true.edr <- mean(results$pow);true.edr
-  true.err <- sum(results$pow*results$pow.dir)/sum(results$pow);true.err
+  true.edr <- mean(results$pow)
+  true.err <- sum(results$pow*results$pow.dir)/sum(results$pow)
   
   sim.z.all = results$z
   sim.t.all = results$abs.t
