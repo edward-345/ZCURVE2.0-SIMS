@@ -41,6 +41,21 @@ multi_ttests <- function(exp, control) {
 }
 
 #### SIMULATION CONDITIONS -----------------------------------------------------
+# EMPTY DATAFRAME TO STORE ALL RESULTS IN EACH ITERATION 
+all.results <- data.frame(tval = numeric(),
+                          df = numeric(),
+                          N = numeric(),
+                          es = numeric(),
+                          delta = numeric(),
+                          pval = numeric())
+
+# EMPTY DATAFRAME TO STORE P-HACKED SELECTED RESULTS IN EACH ITERATION 
+selected.results <- data.frame(tval = numeric(),
+                               df = numeric(),
+                               N = numeric(),
+                               es = numeric(),
+                               delta = numeric(),
+                               pval = numeric())
 
 runs <- 100               # repeat each simulation 100 times
 k.sig <- 1000             # how many significant results?
@@ -86,32 +101,18 @@ RES_COLS <- c("run",
               paste0("edr.", res_names)
               )
 
-# EMPTY DATAFRAME TO STORE ALL RESULTS
-all.results <- data.frame(tval = numeric(),
-                          df = numeric(),
-                          N = numeric(),
-                          es = numeric(),
-                          delta = numeric(),
-                          pval = numeric())
-
-# EMPTY DATAFRAME TO STORE P-HACKED SELECTED RESULTS
-selected.results <- data.frame(tval = numeric(),
-                               df = numeric(),
-                               N = numeric(),
-                               es = numeric(),
-                               delta = numeric(),
-                               pval = numeric())
 
 e <- nrow(simul.cons)
 # for testing, assigns e as 1 so loops only once
 # e <- 1
 
 #### SIMULATION/DATA GENERATION ------------------------------------------------
+#### WE ARE TESTING FOR ANY SIGNIFICANT DIFFERENCE, USING TWO-SIDED T-TESTS
 
 for (run.i in 1:e) {
   
   #Run iteration tracker
-  print(paste("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! RUN: ",run.i))
+  print(paste("------------------------------------------------ RUN: ",run.i))
   sims[run.i,]
   
   #SIGNIFCANT RESULT COUNTER
@@ -156,6 +157,9 @@ for (run.i in 1:e) {
     #ADDING RESULTS TO TOTAL RESULTS
     all.results <- rbind(all.results, all.res)
     
+    #ADDING COLUMN OF CONVERTED ZSCORES TO all.results
+    all.results$z.score <- abs(qnorm(all.results$pval/2, lower.tail = FALSE))
+    
     #FINDING THE INDEX OF THE T-TEST WITH LOWEST P-VALUE
     i_min <- which.min(vapply(ttest_res, function(m) m$p.value, numeric(1)))
     
@@ -176,6 +180,11 @@ for (run.i in 1:e) {
     selected.results <- rbind(selected.results, m.values)
     colnames(selected.results) <- c("tval", "df", "N", "es", "delta", "pval")
     
+    #ADDING COLUMN OF CONVERTED ZSCORES TO selected.results
+    selected.results$z.score <- abs(qnorm(selected.results$pval/2,
+                                          lower.tail = FALSE))
+    
+    #COUNTER FOR SPECIFIED NUMBER OF SIGNIFCANT P-VALUES
     if (min.pvalue < 0.5) {
       count.sig <- count.sig + 1
     }
@@ -183,6 +192,58 @@ for (run.i in 1:e) {
   
   head(all.results)
   head(selected.results)
+  
+  #POWER OF EACH SIMULATION CONDITION COMBO
+  simul.cons$upper.pwr <- pt(qt(.975, (2*simul.cons$n.obs - 2)),
+                             df = (2*simul.cons$n.obs - 2),
+                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs/2),
+                             lower.tail = FALSE)
+  simul.cons$lower.pwr <- pt(-qt(.975, (2*simul.cons$n.obs - 2)),
+                             df = (2*simul.cons$n.obs - 2),
+                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs/2),
+                             lower.tail = TRUE)
+  simul.cons$obs.power <- simul.cons$upper.pwr + simul.cons$lower.pwr
+  simul.cons$upper.pwr <- NULL
+  simul.cons$lower.pwr <- NULL
+  
+  #ADDING true.edr COLUMN TO simul.cons
+  simul.cons$true.edr <- mean(simul.cons$obs.power)
+  
+  #ADDING true.edr COLUMN TO simul.cons
+  simul.cons$true.err <- sum(simul.cons$obs.power*simul.cons$upper.pwr)/sum(simul.cons$obs.power)
+  
+  #FITTING ZCURVE MODELS----------------------------------
+  source(zcurve3)
+  # TOTAL T-TESTS 
+  tot.mdl <- Zing(all.results$z.score)
+  tot.mdl.edr <- c(tot.mdl.edr, unname(tot.mdl$res[3])) 
+  tot.mdl.err <- c(tot.mdl.err, unname(tot.mdl$res[2]))
+  
+  # SELECTED T-TESTS 
+  sel.mdl <- Zing(selected.results$z.score)
+  sel.mdl.edr <- c(sel.mdl.edr, unname(sel.mdl$res[3])) 
+  sel.mdl.err <- c(sel.mdl.err, unname(sel.mdl$res[2]))
+  
+  
+  # TOTAL T-TESTS WITH BIAS TEST
+  source(zcurve3)
+  TEST4BIAS <- TRUE
+  tot.mdl_bias <- Zing(all.results$z.score)
+  tot.mdl_bias.edr <- c(tot.mdl_bias.edr, unname(tot.mdl_bias$res[3])) 
+  tot.mdl_bias.err <- c(tot.mdl_bias.err, unname(tot.mdl_bias$res[2]))
+  
+  tot.mdl_bias.OJS <- c(tot.mdl_bias.OJS, unname(tot.mdl_bias$bias[1]))
+  tot.mdl_bias.EJS <- c(tot.mdl_bias.EJS, unname(tot.mdl_bias$bias[2]))
+  tot.mdl_bias.P <- c(tot.mdl_bias.P, unname(tot.mdl_bias$bias[3]))
+  
+  # SELECTED T-TESTS WITH BIAS TEST
+  sel.mdl_bias <- Zing(selected.results$z.score)
+  sel.mdl_bias.edr <- c(sel.mdl_bias.edr, unname(sel.mdl_bias$res[3])) 
+  sel.mdl_bias.err <- c(sel.mdl_bias.err, unname(sel.mdl_bias$res[2]))
+  
+  sel.mdl_bias.OJS <- c(sel.mdl_bias.OJS, unname(sel.mdl_bias$bias[1]))
+  sel.mdl_bias.EJS <- c(sel.mdl_bias.EJS, unname(sel.mdl_bias$bias[2]))
+  sel.mdl_bias.P <- c(sel.mdl_bias.P, unname(sel.mdl_bias$bias[3]))
   
   
   
