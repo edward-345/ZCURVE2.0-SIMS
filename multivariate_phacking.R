@@ -41,21 +41,26 @@ multi_ttests <- function(exp, control) {
 }
 
 #### SIMULATION CONDITIONS -----------------------------------------------------
-# EMPTY DATAFRAME TO STORE ALL RESULTS IN EACH ITERATION 
-all.results <- data.frame(tval = numeric(),
-                          df = numeric(),
-                          N = numeric(),
-                          es = numeric(),
-                          delta = numeric(),
-                          pval = numeric())
-
-# EMPTY DATAFRAME TO STORE P-HACKED SELECTED RESULTS IN EACH ITERATION 
-selected.results <- data.frame(tval = numeric(),
-                               df = numeric(),
-                               N = numeric(),
-                               es = numeric(),
-                               delta = numeric(),
-                               pval = numeric())
+# EMPTY DATAFRAME TO STORE MODEL SUMMARY VALUES
+model.values <- data.frame(tot.mdl.edr = numeric(),
+                           tot.mdl.err = numeric(), 
+                           
+                           sel.mdl.edr = numeric(), 
+                           sel.mdl.err = numeric(), 
+                           
+                           tot.mdl_bias.edr = numeric(),
+                           tot.mdl_bias.err = numeric(),
+                           
+                           tot.mdl_bias.OJS = numeric(),
+                           tot.mdl_bias.EJS = numeric(),
+                           tot.mdl_bias.P = numeric(),
+                           
+                           sel.mdl_bias.edr = numeric(), 
+                           sel.mdl_bias.err = numeric(),
+                           
+                           sel.mdl_bias.OJS = numeric(),
+                           sel.mdl_bias.EJS = numeric(),
+                           sel.mdl_bias.P = numeric())
 
 runs <- 100               # repeat each simulation 100 times
 k.sig <- 1000             # how many significant results?
@@ -113,24 +118,42 @@ for (run.i in 1:e) {
   
   #Run iteration tracker
   print(paste("------------------------------------------------ RUN: ",run.i))
-  sims[run.i,]
+  simul.cons[run.i,]
   
   #SIGNIFCANT RESULT COUNTER
   count.sig <- 0
   #NUMBER OF RUNS COUNTER
   count.run <- 0
   
+  # EMPTY DATAFRAME TO STORE ALL RESULTS IN EACH ITERATION 
+  all.results <- data.frame(tval = numeric(),
+                            df = numeric(),
+                            N = numeric(),
+                            es = numeric(),
+                            delta = numeric(),
+                            pval = numeric(),
+                            z.score = numeric())
+  
+  # EMPTY DATAFRAME TO STORE P-HACKED SELECTED RESULTS IN EACH ITERATION 
+  selected.results <- data.frame(tval = numeric(),
+                                 df = numeric(),
+                                 N = numeric(),
+                                 es = numeric(),
+                                 delta = numeric(),
+                                 pval = numeric(),
+                                 z.score = numeric())
+  
   # GENERATING DATA -------------------------------------------------
   while (count.sig < k.sig) {
     
     #GENERATE EXP AND CONTROL SAMPLES AND THEIR Y VALUES
     #NOTE THIS USES faux::rnorm_multi()
-    n_vars <- sims$n.vars[run.i]
-    exp_group <- rnorm_multi(n = sims$n.obs[run.i],
-                             mu = rep(sims$es.mean[run.i], n_vars),
+    n_vars <- simul.cons$n.vars[run.i]
+    exp_group <- rnorm_multi(n = simul.cons$n.obs[run.i],
+                             mu = rep(simul.cons$es.mean[run.i], n_vars),
                              sd = 1,
-                             r = sims$r.vars[run.i])
-    control_group <- rnorm_multi(n = sims$n.obs[run.i],
+                             r = simul.cons$r.vars[run.i])
+    control_group <- rnorm_multi(n = simul.cons$n.obs[run.i],
                                  mu = rep(0, n_vars),
                                  sd = 1,
                                  r = 0)
@@ -145,20 +168,19 @@ for (run.i in 1:e) {
       df <- ttest_res[[i]]$parameter
       N <- ttest_res[[i]]$parameter + 2
       es <- unname(ttest_res[[i]]$estimate[1]) 
-      delta <- sims$es.mean[run.i]
+      delta <- simul.cons$es.mean[run.i]
       pval <- ttest_res[[i]]$p.value
-      values <- c(tval, df, N, es, delta, pval)
+      z.score <- abs(qnorm(ttest_res[[i]]$p.value/2, lower.tail = FALSE))
+      values <- c(tval, df, N, es, delta, pval, z.score)
       
       all.res <- rbind(all.res, values)
     }
     
-    colnames(all.res) <- c("tval", "df", "N", "es", "delta", "pval")
-    
+    colnames(all.res) <- c("tval", "df", "N", "es", "delta", "pval", "z.score")
+
     #ADDING RESULTS TO TOTAL RESULTS
     all.results <- rbind(all.results, all.res)
     
-    #ADDING COLUMN OF CONVERTED ZSCORES TO all.results
-    all.results$z.score <- abs(qnorm(all.results$pval/2, lower.tail = FALSE))
     
     #FINDING THE INDEX OF THE T-TEST WITH LOWEST P-VALUE
     i_min <- which.min(vapply(ttest_res, function(m) m$p.value, numeric(1)))
@@ -172,20 +194,18 @@ for (run.i in 1:e) {
     m.df <- sig_ttest$parameter
     m.N <- sig_ttest$parameter + 2
     m.es <- unname(sig_ttest$estimate[1]) 
-    m.delta <- sims$es.mean[run.i]
+    m.delta <- simul.cons$es.mean[run.i]
     m.pval <- sig_ttest$p.value
-    m.values <- c(m.tval, m.df, m.N, m.es, m.delta, m.pval)
+    m.zscore <- abs(qnorm(sig_ttest$p.value/2, lower.tail = FALSE))
+    m.values <- c(m.tval, m.df, m.N, m.es, m.delta, m.pval, m.zscore)
     
     #ADDING RESULTS TO SELECTED RESULTS
     selected.results <- rbind(selected.results, m.values)
-    colnames(selected.results) <- c("tval", "df", "N", "es", "delta", "pval")
-    
-    #ADDING COLUMN OF CONVERTED ZSCORES TO selected.results
-    selected.results$z.score <- abs(qnorm(selected.results$pval/2,
-                                          lower.tail = FALSE))
+    colnames(selected.results) <- c("tval", "df", "N", "es",
+                                    "delta", "pval", "z.score")
     
     #COUNTER FOR SPECIFIED NUMBER OF SIGNIFCANT P-VALUES
-    if (min.pvalue < 0.5) {
+    if (min.pvalue < 0.05) {
       count.sig <- count.sig + 1
     }
   } # END OF WHILE LOOP/DATA GENERATOR -----------------------------------
@@ -194,17 +214,15 @@ for (run.i in 1:e) {
   head(selected.results)
   
   #POWER OF EACH SIMULATION CONDITION COMBO
-  simul.cons$upper.pwr <- pt(qt(.975, (2*simul.cons$n.obs - 2)),
+  simul.cons$upper.pwr <- pt(qt(.975, (2*simul.cons$n.obs[run.i] - 2)),
                              df = (2*simul.cons$n.obs - 2),
-                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs/2),
+                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs[run.i]/2),
                              lower.tail = FALSE)
-  simul.cons$lower.pwr <- pt(-qt(.975, (2*simul.cons$n.obs - 2)),
+  simul.cons$lower.pwr <- pt(-qt(.975, (simul.cons$n.obs[run.i] - 2)),
                              df = (2*simul.cons$n.obs - 2),
-                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs/2),
+                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs[run.i]/2),
                              lower.tail = TRUE)
   simul.cons$obs.power <- simul.cons$upper.pwr + simul.cons$lower.pwr
-  simul.cons$upper.pwr <- NULL
-  simul.cons$lower.pwr <- NULL
   
   #ADDING true.edr COLUMN TO simul.cons
   simul.cons$true.edr <- mean(simul.cons$obs.power)
@@ -213,42 +231,79 @@ for (run.i in 1:e) {
   simul.cons$true.err <- sum(simul.cons$obs.power*simul.cons$upper.pwr)/sum(simul.cons$obs.power)
   
   #FITTING ZCURVE MODELS----------------------------------
+  #EMPTY DATA FRAME FOR STORING MODEL VALUES OF CURRENT ITERATION (SINGLE ROW)
+  model.val <- data.frame()
+  
   source(zcurve3)
   # TOTAL T-TESTS 
   tot.mdl <- Zing(all.results$z.score)
-  tot.mdl.edr <- c(tot.mdl.edr, unname(tot.mdl$res[3])) 
-  tot.mdl.err <- c(tot.mdl.err, unname(tot.mdl$res[2]))
+  tot.mdl.edr <- unname(tot.mdl$res[3])
+  tot.mdl.err <- unname(tot.mdl$res[2])
   
   # SELECTED T-TESTS 
   sel.mdl <- Zing(selected.results$z.score)
-  sel.mdl.edr <- c(sel.mdl.edr, unname(sel.mdl$res[3])) 
-  sel.mdl.err <- c(sel.mdl.err, unname(sel.mdl$res[2]))
+  sel.mdl.edr <- unname(sel.mdl$res[3]) 
+  sel.mdl.err <- unname(sel.mdl$res[2])
   
   
   # TOTAL T-TESTS WITH BIAS TEST
   source(zcurve3)
   TEST4BIAS <- TRUE
   tot.mdl_bias <- Zing(all.results$z.score)
-  tot.mdl_bias.edr <- c(tot.mdl_bias.edr, unname(tot.mdl_bias$res[3])) 
-  tot.mdl_bias.err <- c(tot.mdl_bias.err, unname(tot.mdl_bias$res[2]))
+  tot.mdl_bias.edr <- unname(tot.mdl_bias$res[3])
+  tot.mdl_bias.err <- unname(tot.mdl_bias$res[2])
   
-  tot.mdl_bias.OJS <- c(tot.mdl_bias.OJS, unname(tot.mdl_bias$bias[1]))
-  tot.mdl_bias.EJS <- c(tot.mdl_bias.EJS, unname(tot.mdl_bias$bias[2]))
-  tot.mdl_bias.P <- c(tot.mdl_bias.P, unname(tot.mdl_bias$bias[3]))
+  tot.mdl_bias.OJS <- unname(tot.mdl_bias$bias[1])
+  tot.mdl_bias.EJS <- unname(tot.mdl_bias$bias[2])
+  tot.mdl_bias.P <- unname(tot.mdl_bias$bias[3])
   
   # SELECTED T-TESTS WITH BIAS TEST
   sel.mdl_bias <- Zing(selected.results$z.score)
-  sel.mdl_bias.edr <- c(sel.mdl_bias.edr, unname(sel.mdl_bias$res[3])) 
-  sel.mdl_bias.err <- c(sel.mdl_bias.err, unname(sel.mdl_bias$res[2]))
+  sel.mdl_bias.edr <- unname(sel.mdl_bias$res[3])
+  sel.mdl_bias.err <- unname(sel.mdl_bias$res[2])
   
-  sel.mdl_bias.OJS <- c(sel.mdl_bias.OJS, unname(sel.mdl_bias$bias[1]))
-  sel.mdl_bias.EJS <- c(sel.mdl_bias.EJS, unname(sel.mdl_bias$bias[2]))
-  sel.mdl_bias.P <- c(sel.mdl_bias.P, unname(sel.mdl_bias$bias[3]))
+  sel.mdl_bias.OJS <- unname(sel.mdl_bias$bias[1])
+  sel.mdl_bias.EJS <- unname(sel.mdl_bias$bias[2])
+  sel.mdl_bias.P <- unname(sel.mdl_bias$bias[3])
   
+  mdl.vals <- c(tot.mdl.edr,
+                tot.mdl.err,
+                sel.mdl.edr,
+                sel.mdl.err,
+                tot.mdl_bias.edr,
+                tot.mdl_bias.err,
+                tot.mdl_bias.OJS,
+                tot.mdl_bias.EJS,
+                tot.mdl_bias.P,
+                sel.mdl_bias.edr, 
+                sel.mdl_bias.err,
+                sel.mdl_bias.OJS,
+                sel.mdl_bias.EJS,
+                sel.mdl_bias.P)
   
+  #cant add to simul.cons yet- will need to after so that col lens equal
+  model.val <- rbind(model.val, mdl.vals)
+  colnames(model.val) <- c("tot.mdl.edr",
+                           "tot.mdl.err",
+                           "sel.mdl.edr",
+                           "sel.mdl.err",
+                           "tot.mdl_bias.edr",
+                           "tot.mdl_bias.err",
+                           "tot.mdl_bias.OJS",
+                           "tot.mdl_bias.EJS",
+                           "tot.mdl_bias.P",
+                           "sel.mdl_bias.edr", 
+                           "sel.mdl_bias.err",
+                           "sel.mdl_bias.OJS",
+                           "sel.mdl_bias.EJS",
+                           "sel.mdl_bias.P")
   
+  model.values <- rbind(model.values, model.val)
   
-  
-  
-}
+} # END OF LOOP- WE NOW HAVE simul.cons and model.values
+
+simul.data <- cbind(simul.cons, model.values)
+
+
+
 
