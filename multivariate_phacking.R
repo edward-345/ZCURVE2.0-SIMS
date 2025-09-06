@@ -62,7 +62,6 @@ model.values <- data.frame(tot.mdl.edr = numeric(),
                            sel.mdl_bias.EJS = numeric(),
                            sel.mdl_bias.P = numeric())
 
-runs <- 100               # repeat each simulation 100 times
 k.sig <- 1000             # how many significant results?
 
 es.mean <- seq(0, 1, .25)    # mean effect size, Cohen's d
@@ -88,28 +87,18 @@ simul.cons <- data.frame(simul.cons)
 colnames(simul.cons) <- c("run","es.mean","r.vars","n.obs", "n.vars")
 dim(simul.cons)
 
-# BUILDING RES COLUMN NAMES
-res_names <- c("all",
-               "selected",
-               "bias.all",
-               "bias.selected")
-
-
-RES_COLS <- c("run",
-              "es.mean",
-              "r.vars",
-              "n.obs",
-              "n.vars",
-              "true.err",
-              paste0("err.", res_names),
-              "true.edr",
-              paste0("edr.", res_names)
-              )
-
+#POWER OF EACH SIMULATION CONDITION COMBO
+simul.cons$upper.pwr <- pt(qt(.975, (2*simul.cons$n.obs - 2)),
+                           df = (2*simul.cons$n.obs - 2),
+                           ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs/2),
+                           lower.tail = FALSE)
+simul.cons$lower.pwr <- pt(-qt(.975, (2*simul.cons$n.obs - 2)),
+                           df = (2*simul.cons$n.obs - 2),
+                           ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs/2),
+                           lower.tail = TRUE)
+simul.cons$obs.power <- simul.cons$upper.pwr + simul.cons$lower.pwr
 
 e <- nrow(simul.cons)
-# for testing, assigns e as 1 so loops only once
-# e <- 1
 
 #### SIMULATION/DATA GENERATION ------------------------------------------------
 #### WE ARE TESTING FOR ANY SIGNIFICANT DIFFERENCE, USING TWO-SIDED T-TESTS
@@ -156,7 +145,7 @@ for (run.i in 1:e) {
     control_group <- rnorm_multi(n = simul.cons$n.obs[run.i],
                                  mu = rep(0, n_vars),
                                  sd = 1,
-                                 r = 0)
+                                 r = simul.cons$r.vars[run.i])
     
     #T-TESTS OF EACH COVARIATE AND THE AVERAGE OF ALL COVARIATES
     ttest_res <- multi_ttests(exp_group, control_group) #note this is a list
@@ -164,12 +153,12 @@ for (run.i in 1:e) {
     #EXTRACTING VALUES FROM EVERY T-TEST IN THE CURRENT ITERATION
     all.res <- data.frame()
     for (i in seq_along(ttest_res)) {
-      tval <- ttest_res[[i]]$statistic
-      df <- ttest_res[[i]]$parameter
-      N <- ttest_res[[i]]$parameter + 2
-      es <- unname(ttest_res[[i]]$estimate[1]) 
-      delta <- simul.cons$es.mean[run.i]
-      pval <- ttest_res[[i]]$p.value
+      tval <- unname(ttest_res[[i]]$statistic)
+      df <- unname(ttest_res[[i]]$parameter)
+      N <- unname(ttest_res[[i]]$parameter) + 2
+      es <- unname(ttest_res[[i]]$estimate[1]) #technically isnt used
+      delta <- simul.cons$es.mean[run.i]      #technically isnt used
+      pval <- unname(ttest_res[[i]]$p.value)
       z.score <- abs(qnorm(ttest_res[[i]]$p.value/2, lower.tail = FALSE))
       values <- c(tval, df, N, es, delta, pval, z.score)
       
@@ -210,37 +199,23 @@ for (run.i in 1:e) {
     }
   } # END OF WHILE LOOP/DATA GENERATOR -----------------------------------
   
+  # DATA FRAMES WE WILL WORK WITH 
   head(all.results)
   head(selected.results)
   
-  #POWER OF EACH SIMULATION CONDITION COMBO
-  simul.cons$upper.pwr <- pt(qt(.975, (2*simul.cons$n.obs[run.i] - 2)),
-                             df = (2*simul.cons$n.obs - 2),
-                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs[run.i]/2),
-                             lower.tail = FALSE)
-  simul.cons$lower.pwr <- pt(-qt(.975, (simul.cons$n.obs[run.i] - 2)),
-                             df = (2*simul.cons$n.obs - 2),
-                             ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs[run.i]/2),
-                             lower.tail = TRUE)
-  simul.cons$obs.power <- simul.cons$upper.pwr + simul.cons$lower.pwr
-  
-  #ADDING true.edr COLUMN TO simul.cons
-  simul.cons$true.edr <- mean(simul.cons$obs.power)
-  
-  #ADDING true.edr COLUMN TO simul.cons
-  simul.cons$true.err <- sum(simul.cons$obs.power*simul.cons$upper.pwr)/sum(simul.cons$obs.power)
   
   #FITTING ZCURVE MODELS----------------------------------
   #EMPTY DATA FRAME FOR STORING MODEL VALUES OF CURRENT ITERATION (SINGLE ROW)
   model.val <- data.frame()
   
+  # TOTAL T-TESTS
   source(zcurve3)
-  # TOTAL T-TESTS 
   tot.mdl <- Zing(all.results$z.score)
   tot.mdl.edr <- unname(tot.mdl$res[3])
   tot.mdl.err <- unname(tot.mdl$res[2])
   
-  # SELECTED T-TESTS 
+  # SELECTED T-TESTS
+  source(zcurve3)
   sel.mdl <- Zing(selected.results$z.score)
   sel.mdl.edr <- unname(sel.mdl$res[3]) 
   sel.mdl.err <- unname(sel.mdl$res[2])
@@ -258,6 +233,8 @@ for (run.i in 1:e) {
   tot.mdl_bias.P <- unname(tot.mdl_bias$bias[3])
   
   # SELECTED T-TESTS WITH BIAS TEST
+  source(zcurve3)
+  TEST4BIAS <- TRUE
   sel.mdl_bias <- Zing(selected.results$z.score)
   sel.mdl_bias.edr <- unname(sel.mdl_bias$res[3])
   sel.mdl_bias.err <- unname(sel.mdl_bias$res[2])
@@ -266,7 +243,23 @@ for (run.i in 1:e) {
   sel.mdl_bias.EJS <- unname(sel.mdl_bias$bias[2])
   sel.mdl_bias.P <- unname(sel.mdl_bias$bias[3])
   
-  mdl.vals <- c(tot.mdl.edr,
+  # TRUE EDR AND ERR !! NOTE EDR = ERR = POWER SINCE EACH ITERATION IS HOMOGENOUS
+  upper_pwr <- pt(qt(.975, (2*simul.cons$n.obs[run.i] - 2)),
+                             df = (2*simul.cons$n.obs[run.i] - 2),
+                             ncp = simul.cons$es.mean[run.i]*sqrt(simul.cons$n.obs[run.i]/2),
+                             lower.tail = FALSE)
+  lower_pwr <- pt(-qt(.975, (2*simul.cons$n.obs[run.i] - 2)),
+                             df = (2*simul.cons$n.obs[run.i] - 2),
+                             ncp = simul.cons$es.mean[run.i]*sqrt(simul.cons$n.obs[run.i]/2),
+                             lower.tail = TRUE)
+  true.edr <- upper_pwr + lower_pwr
+  
+  true.err <- ((nrow(all.results)*true.edr)*upper_pwr)/(nrow(all.results)*true.edr)
+  
+  
+  mdl.vals <- c(true.edr,
+                true.err,
+                tot.mdl.edr,
                 tot.mdl.err,
                 sel.mdl.edr,
                 sel.mdl.err,
@@ -283,7 +276,9 @@ for (run.i in 1:e) {
   
   #cant add to simul.cons yet- will need to after so that col lens equal
   model.val <- rbind(model.val, mdl.vals)
-  colnames(model.val) <- c("tot.mdl.edr",
+  colnames(model.val) <- c("true.edr",
+                           "true.err",
+                           "tot.mdl.edr",
                            "tot.mdl.err",
                            "sel.mdl.edr",
                            "sel.mdl.err",
