@@ -28,7 +28,7 @@ sim_null.3.0 <- Zing(pval_converter(sim_null$pvals))
 
 #----------------------------------------------
 
-A_null <- A_sim(5000)
+A_null <- A_sim(15000, exp_mu = c(1, 1))
 summary(A_null$fit_A)
 A_null.plot <- plot(A_null$fit_A,
                        CI = TRUE, annotation = TRUE,
@@ -40,14 +40,17 @@ A_null.pvals.plot <- plot(A_null.pvals, ymax = 10,
                           CI = TRUE, annotation = TRUE,
                           main = "Scenario A P-vals under Null Hypothesis")
 # ZCURVE 3.0
+source(zcurve3)
 ymax <- 0.8
 TEST4HETEROGENEITY <- 0
 TEST4BIAS <- TRUE
-A_null.3.0 <- Zing(pval_converter(A_null$pvalues_scenarioA))
+A_null.3.0 <- Zing(A_null$zscores_A)
+A_null.test <- Zing(pval_converter(A_null$pvalues_scenarioA))
 
 #----------------------------------------------
 
-B_null <- B_sim(5000)
+B_null <- B_sim(1000, control_mu = 2)
+B_null.sig <- B
 summary(B_null$fit_B)
 B_null.plot <- plot(B_null$fit_B,
                     CI = TRUE, annotation = TRUE,
@@ -59,6 +62,7 @@ B_null.pvals.plot <- plot(B_null.pvals, ymax = 10,
                           CI = TRUE, annotation = TRUE,
                           main = "Scenario B P-vals under Null Hypothesis")
 # ZCURVE 3.0
+source(zcurve3)
 ymax <- 0.8
 TEST4HETEROGENEITY <- 0
 TEST4BIAS <- TRUE
