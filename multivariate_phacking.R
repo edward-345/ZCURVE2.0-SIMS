@@ -299,6 +299,7 @@ for (run.i in 1:e) {
 
 simul.data <- cbind(simul.cons, model.values)
 
+write.csv(df, "simul.data.csv", row.names = FALSE)
 
 
 
