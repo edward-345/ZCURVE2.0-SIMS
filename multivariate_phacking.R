@@ -9,8 +9,6 @@ set.seed(67)
 # Load z-curve and p-curve functions directly from GitHub
 zcurve3 <- "https://raw.githubusercontent.com/UlrichSchimmack/zcurve3.0/refs/heads/main/Zing.25.07.11.test.R"
 source(zcurve3)
-pcurve <- "https://github.com/UlrichSchimmack/zcurve3.0/raw/refs/heads/main/Pcurve.Function.R"
-source(pcurve)
 
 # Install required packages (run once only)
 library(zcurve)
@@ -62,7 +60,7 @@ model.values <- data.frame(tot.mdl.edr = numeric(),
                            sel.mdl_bias.EJS = numeric(),
                            sel.mdl_bias.P = numeric())
 
-k.sig <- 1000             # how many significant results?
+k.sig <- 15000             # how many significant results?
 
 es.mean <- seq(0, 1, .25)    # mean effect size, Cohen's d
 n.obs <- c(15, 20, 30)   # sample size per cell
@@ -97,6 +95,9 @@ simul.cons$lower.pwr <- pt(-qt(.975, (2*simul.cons$n.obs - 2)),
                            ncp = simul.cons$es.mean*sqrt(simul.cons$n.obs/2),
                            lower.tail = TRUE)
 simul.cons$obs.power <- simul.cons$upper.pwr + simul.cons$lower.pwr
+
+#FAMILY-WISE ERROR RATE
+simul.cons$fw.err <- 1-((1-0.05)^simul.cons$n.vars)
 
 e <- nrow(simul.cons)
 
