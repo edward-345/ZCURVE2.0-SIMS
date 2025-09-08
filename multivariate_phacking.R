@@ -211,37 +211,37 @@ for (run.i in 1:e) {
   # TOTAL T-TESTS
   source(zcurve3)
   tot.mdl <- Zing(all.results$z.score)
-  tot.mdl.edr <- unname(tot.mdl$res[3])
-  tot.mdl.err <- unname(tot.mdl$res[2])
+  tot.mdl.edr <- unname(tot.mdl$res["EDR"])
+  tot.mdl.err <- unname(tot.mdl$res["ERR"])
   
   # SELECTED T-TESTS
   source(zcurve3)
   sel.mdl <- Zing(selected.results$z.score)
-  sel.mdl.edr <- unname(sel.mdl$res[3]) 
-  sel.mdl.err <- unname(sel.mdl$res[2])
+  sel.mdl.edr <- unname(sel.mdl$res["EDR"]) 
+  sel.mdl.err <- unname(sel.mdl$res["ERR"])
   
   
   # TOTAL T-TESTS WITH BIAS TEST
   source(zcurve3)
   TEST4BIAS <- TRUE
   tot.mdl_bias <- Zing(all.results$z.score)
-  tot.mdl_bias.edr <- unname(tot.mdl_bias$res[3])
-  tot.mdl_bias.err <- unname(tot.mdl_bias$res[2])
+  tot.mdl_bias.edr <- unname(tot.mdl_bias$res["EDR"])
+  tot.mdl_bias.err <- unname(tot.mdl_bias$res["ERR"])
   
-  tot.mdl_bias.OJS <- unname(tot.mdl_bias$bias[1])
-  tot.mdl_bias.EJS <- unname(tot.mdl_bias$bias[2])
-  tot.mdl_bias.P <- unname(tot.mdl_bias$bias[3])
+  tot.mdl_bias.OJS <- unname(tot.mdl_bias$bias["OBS.JS"])
+  tot.mdl_bias.EJS <- unname(tot.mdl_bias$bias["EXP.JS"])
+  tot.mdl_bias.P <- unname(tot.mdl_bias$bias["EJS.p"])
   
   # SELECTED T-TESTS WITH BIAS TEST
   source(zcurve3)
   TEST4BIAS <- TRUE
   sel.mdl_bias <- Zing(selected.results$z.score)
-  sel.mdl_bias.edr <- unname(sel.mdl_bias$res[3])
-  sel.mdl_bias.err <- unname(sel.mdl_bias$res[2])
+  sel.mdl_bias.edr <- unname(sel.mdl_bias$res["EDR"])
+  sel.mdl_bias.err <- unname(sel.mdl_bias$res["ERR"])
   
-  sel.mdl_bias.OJS <- unname(sel.mdl_bias$bias[1])
-  sel.mdl_bias.EJS <- unname(sel.mdl_bias$bias[2])
-  sel.mdl_bias.P <- unname(sel.mdl_bias$bias[3])
+  sel.mdl_bias.OJS <- unname(sel.mdl_bias$bias["OBS.JS"])
+  sel.mdl_bias.EJS <- unname(sel.mdl_bias$bias["EXP.JS"])
+  sel.mdl_bias.P <- unname(sel.mdl_bias$bias["EJS.p"])
   
   # TRUE EDR AND ERR !! NOTE EDR = ERR = POWER SINCE EACH ITERATION IS HOMOGENOUS
   upper_pwr <- pt(qt(.975, (2*simul.cons$n.obs[run.i] - 2)),
